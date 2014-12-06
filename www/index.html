@@ -7,6 +7,37 @@
 body { background: gray; }
 </style>
 
+<script type="x-shader/x-vertex" id="sprite-vs">
+#version 100
+precision mediump float;
+attribute vec2 pos;
+attribute vec2 uv;
+attribute float size;
+varying vec2 va_uv;
+uniform mat4 mvp;
+
+void main() {
+	va_uv = uv;
+	gl_PointSize = size;
+	gl_Position = mvp*vec4(pos, 0.0, 1.0);
+}
+</script>
+
+<script type="x-shader/x-fragment" id="sprite-fs">
+#version 100
+precision mediump float;
+varying vec2 va_uv;
+uniform sampler2D tex;
+const float uvMul = 1.0 / 16.0;
+
+void main() {
+	vec2 uv = (gl_PointCoord + va_uv) * uvMul;
+	vec4 col = texture2D(tex, uv);
+	if (col.a < 0.5) discard;
+	gl_FragColor = col;
+}
+</script>
+
 <script type="x-shader/x-vertex" id="bg-vs">
 #version 100
 precision mediump float;
