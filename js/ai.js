@@ -18,6 +18,7 @@ function aiNextWave() {
 	aiList.push(new Ai(nodeAiStart, SP_AI_RED));
 	aiList.push(new Ai(nodeAiStart, SP_AI_RED));
 	aiList.push(new Ai(nodeAiStart, SP_AI_RED));
+	aiList.push(new Ai(nodeAiStart, SP_AI_RED));
 	aiWave++;
 }
 

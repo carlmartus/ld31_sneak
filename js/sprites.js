@@ -11,7 +11,7 @@ var SPRITE_DIM = 16;
 
 var SP_NODE = [0, 0];
 var SP_CROSS = [1, 0];
-var SP_AI_RED = [0, 1];
+var SP_AI_RED = [0, 2];
 
 // Comp 0 - x
 // Comp 1 - y

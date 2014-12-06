@@ -27,7 +27,7 @@ function nodeInit() {
 	alley2.linkSouth(alley0);
 	alley0.linkWest(alley1);
 
-	nodeAiStart = alley2;
+	nodeAiStart = nord0;
 }
 
 function nodeRender() {
@@ -64,13 +64,12 @@ NodeWalker.prototype.frame = function(ft) {
 	this.animation = ((Math.floor(this.travelDist) >> 4) & 1);
 
 	if (this.travelDist <= 0.0) {
+		this.x = this.dest.x;
+		this.y = this.dest.y;
 		this.state = NW_IDLE;
 		this.travelDist = 0.0;
-		this.last = this.from;
 		this.from = this.dest;
 		this.dest = null;
-		this.x = this.from.x;
-		this.y = this.from.y;
 	}
 }
 
@@ -82,6 +81,7 @@ NodeWalker.prototype.travel = function(target) {
 
 	this.dest = target;
 	this.state = NW_WALKING;
+	this.last = this.from;
 
 	var dx = target.x - this.from.x;
 	var dy = target.y - this.from.y;
@@ -91,12 +91,13 @@ NodeWalker.prototype.travel = function(target) {
 }
 
 function shouldGo(walker, dir, list) {
-	if (dir != null) {
+	if (dir != null && (walker.last == null || !dir.equals(walker.last))) {
 		list.push(dir);
-		if (walker.last && dir != walker.last) {
-			list.push(dir);
-		}
 	}
+}
+
+Node.prototype.equals = function(other) {
+	return this.x == other.x && this.y == other.y;
 }
 
 NodeWalker.prototype.goRandom = function() {
@@ -105,6 +106,13 @@ NodeWalker.prototype.goRandom = function() {
 	shouldGo(this, this.from.east, poss);
 	shouldGo(this, this.from.south, poss);
 	shouldGo(this, this.from.north, poss);
+
+	if (poss.length <= 0) {
+		if (this.from.west != null)		poss.push(this.from.west);
+		if (this.from.east != null)		poss.push(this.from.east);
+		if (this.from.south != null)	poss.push(this.from.south);
+		if (this.from.north != null)	poss.push(this.from.north);
+	}
 
 	this.travel(poss[Math.floor(Math.random()*poss.length)]);
 }
