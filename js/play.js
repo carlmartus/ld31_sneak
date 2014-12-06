@@ -4,6 +4,7 @@ function playFrame(ft) {
 
 	nodeRender();
 
+	avatarFrame(ft);
 	aiFrame(ft);
 }
 

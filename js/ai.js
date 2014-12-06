@@ -1,7 +1,7 @@
 var aiList;
 var aiWave = 0;
 
-var AI_RAND = 20;
+var AI_RAND = 32;
 
 function aiInit() {
 	aiNextWave();

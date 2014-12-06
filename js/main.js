@@ -27,9 +27,13 @@ function loaded() {
 	spriteInit();
 	nodeInit();
 	aiInit();
+	avatarInit();
 
 	texBg = makeTexture(imgBg);
 	texSprites = makeTexture(imgSprites);
+
+	var canvas = document.getElementById('can');
+	canvas.addEventListener('mousedown', mouseEvent, false);
 
 	frameFunc = playFrame;
 	esNextFrame(frameExec);
@@ -47,6 +51,14 @@ function main() {
 	imgBg = lod.loadImage('bg.png');
 	imgSprites = lod.loadImage('sprites.png');
 	lod.download(loaded);
+}
+
+function mouseEvent(event) {
+	var canvas = document.getElementById('can');
+	var rect = canvas.getBoundingClientRect();
+	avatarMouse(
+			event.clientX - rect.x,
+			event.clientY - rect.y);
 }
 
 function assert(cond, msg) {

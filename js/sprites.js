@@ -11,6 +11,11 @@ var SPRITE_DIM = 16;
 
 var SP_NODE = [0, 0];
 var SP_CROSS = [1, 0];
+var SP_BOX_FREE = [1, 0];
+var SP_BOX_TAKEN = [2, 0];
+var SP_PLAYER_IDLE = [8, 1];
+
+var SP_PLAYER = [0, 1];
 var SP_AI_RED = [0, 2];
 
 // Comp 0 - x
@@ -80,5 +85,10 @@ function spriteFlush() {
 	gl.disableVertexAttribArray(2);
 
 	spriteCount = 0;
+}
+
+function spriteFrame(base, walker) {
+	var x = base[0] + walker.animationBase + walker.animation;
+	return [ x, base[1] ];
 }
 
