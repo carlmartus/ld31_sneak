@@ -8,7 +8,10 @@ var SPRITE_COMPS = 5;
 var SPRITE_COMPS_SIZE = SPRITE_COMPS*4;
 
 var SPRITE_DIM = 16;
+
 var SP_NODE = [0, 0];
+var SP_CROSS = [1, 0];
+var SP_AI_RED = [0, 1];
 
 // Comp 0 - x
 // Comp 1 - y

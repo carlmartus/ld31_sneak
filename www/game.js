@@ -19,6 +19,7 @@ function bgInit() {
 	bgProgram = new esProgram(gl);
 	bgProgram.addShaderId('bg-fs', ES_FRAGMENT);
 	bgProgram.addShaderId('bg-vs', ES_VERTEX);
+	bgProgram.bindAttribute(0, 'pos');
 	bgProgram.link();
 	bgProgram.use();
 
@@ -41,6 +42,58 @@ function bgRender() {
 	gl.disableVertexAttribArray(0);
 }
 
+var aiList;
+var aiWave = 0;
+
+var AI_RAND = 20;
+
+function aiInit() {
+	aiNextWave();
+}
+
+function aiFrame(ft) {
+	for (var i=0; i<aiList.length; i++) {
+		aiList[i].frame(ft);
+	}
+}
+
+function aiNextWave() {
+	aiList = [];
+	aiList.push(new Ai(nodeAiStart, SP_AI_RED));
+	aiList.push(new Ai(nodeAiStart, SP_AI_RED));
+	aiList.push(new Ai(nodeAiStart, SP_AI_RED));
+	aiWave++;
+}
+
+function Ai(startNode, spriteBase) {
+	this.orgSpeed = 20+Math.random()*15;
+	this.walker = new NodeWalker(startNode, this.orgSpeed);
+	this.offsetX = (Math.random() - 0.5)*AI_RAND;
+	this.offsetY = (Math.random() - 0.5)*AI_RAND;
+	this.walker.goRandom();
+	this.spriteBase = spriteBase;
+}
+
+Ai.prototype.frame = function(ft) {
+	if (this.walker.state == NW_IDLE) {
+		this.walker.goRandom();
+		this.walker.speed = this.orgSpeed;
+	}
+	this.walker.frame(ft);
+
+	var aniSelect =
+		this.walker.animation + this.walker.animationBase;
+	var ani = [
+		this.spriteBase[0] + aniSelect,
+		this.spriteBase[1] ];
+
+	var yOffset = this.walker.animation;
+	spriteAdd(
+			Math.floor(this.walker.x + this.offsetX),
+			Math.floor(this.walker.y + this.offsetY) + yOffset,
+			24.0, ani);
+}
+
 var spriteList;
 var spriteCount;
 var spriteVbo;
@@ -51,7 +104,10 @@ var SPRITE_COMPS = 5;
 var SPRITE_COMPS_SIZE = SPRITE_COMPS*4;
 
 var SPRITE_DIM = 16;
+
 var SP_NODE = [0, 0];
+var SP_CROSS = [1, 0];
+var SP_AI_RED = [0, 1];
 
 // Comp 0 - x
 // Comp 1 - y
@@ -124,6 +180,11 @@ function spriteFlush() {
 
 var nodeList;
 
+var NW_IDLE = 0;
+var NW_WALKING = 1;
+
+var nodeAiStart;
+
 function nodeInit() {
 	nodeList = [];
 
@@ -140,6 +201,13 @@ function nodeInit() {
 	nord0.linkSouth(nord2);
 	nord2.linkWest(nord3);
 	nord1.linkSouth(nord3);
+
+	nord3.linkWest(alley0);
+
+	alley2.linkSouth(alley0);
+	alley0.linkWest(alley1);
+
+	nodeAiStart = alley2;
 }
 
 function nodeRender() {
@@ -152,6 +220,73 @@ function packNode(x, y) {
 	var node = new Node(x, y);
 	nodeList.push(node);
 	return node;
+}
+
+function NodeWalker(start, speed) {
+	this.speed = speed;
+	this.x = start.x;
+	this.y = start.y;
+	this.from = start;
+	this.dest = null;
+	this.last = null;
+	this.state = NW_IDLE;
+	this.travelDist = 0.0;
+	this.travelDirX = 0.0;
+	this.travelDirY = 0.0;
+	this.animationBase = 0;
+	this.animation = 0;
+}
+
+NodeWalker.prototype.frame = function(ft) {
+	this.travelDist -= ft*this.speed;
+	this.x += this.travelDirX*ft*this.speed;
+	this.y += this.travelDirY*ft*this.speed;
+	this.animation = ((Math.floor(this.travelDist) >> 4) & 1);
+
+	if (this.travelDist <= 0.0) {
+		this.state = NW_IDLE;
+		this.travelDist = 0.0;
+		this.last = this.from;
+		this.from = this.dest;
+		this.dest = null;
+		this.x = this.from.x;
+		this.y = this.from.y;
+	}
+}
+
+NodeWalker.prototype.travel = function(target) {
+	if (target == this.from.west)	this.animationBase = 2;
+	if (target == this.from.east)	this.animationBase = 0;
+	if (target == this.from.south)	this.animationBase = 4;
+	if (target == this.from.north)	this.animationBase = 6;
+
+	this.dest = target;
+	this.state = NW_WALKING;
+
+	var dx = target.x - this.from.x;
+	var dy = target.y - this.from.y;
+	this.travelDist = Math.sqrt(dx*dx + dy*dy);
+	this.travelDirX = dx / this.travelDist;
+	this.travelDirY = dy / this.travelDist;
+}
+
+function shouldGo(walker, dir, list) {
+	if (dir != null) {
+		list.push(dir);
+		if (walker.last && dir != walker.last) {
+			list.push(dir);
+		}
+	}
+}
+
+NodeWalker.prototype.goRandom = function() {
+	var poss = [];
+	shouldGo(this, this.from.west, poss);
+	shouldGo(this, this.from.east, poss);
+	shouldGo(this, this.from.south, poss);
+	shouldGo(this, this.from.north, poss);
+
+	this.travel(poss[Math.floor(Math.random()*poss.length)]);
 }
 
 function Node(x, y) {
@@ -182,6 +317,8 @@ var texBg;
 var texSprites;
 
 function frameExec(ft) {
+	if (ft > 0.3) return;
+
 	if (frameFunc != null) frameFunc(ft);
 	spriteFlush();
 }
@@ -200,6 +337,7 @@ function loaded() {
 	bgInit();
 	spriteInit();
 	nodeInit();
+	aiInit();
 
 	texBg = makeTexture(imgBg);
 	texSprites = makeTexture(imgSprites);
@@ -232,6 +370,9 @@ function assert(cond, msg) {
 function playFrame(ft) {
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	bgRender();
+
 	nodeRender();
+
+	aiFrame(ft);
 }
 

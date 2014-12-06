@@ -12,5 +12,5 @@ $(OUT): $(MID)
 	$(MINI) $(MID) -o $@
 
 clean:
-	$(RM) $(OUT)
+	$(RM) $(OUT) $(MID)
 

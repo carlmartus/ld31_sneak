@@ -19,6 +19,7 @@ function bgInit() {
 	bgProgram = new esProgram(gl);
 	bgProgram.addShaderId('bg-fs', ES_FRAGMENT);
 	bgProgram.addShaderId('bg-vs', ES_VERTEX);
+	bgProgram.bindAttribute(0, 'pos');
 	bgProgram.link();
 	bgProgram.use();
 

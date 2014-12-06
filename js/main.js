@@ -6,6 +6,8 @@ var texBg;
 var texSprites;
 
 function frameExec(ft) {
+	if (ft > 0.3) return;
+
 	if (frameFunc != null) frameFunc(ft);
 	spriteFlush();
 }
@@ -24,6 +26,7 @@ function loaded() {
 	bgInit();
 	spriteInit();
 	nodeInit();
+	aiInit();
 
 	texBg = makeTexture(imgBg);
 	texSprites = makeTexture(imgSprites);
