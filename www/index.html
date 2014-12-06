@@ -6,10 +6,35 @@
 <style>
 body { background: gray; }
 </style>
+
+<script type="x-shader/x-vertex" id="bg-vs">
+#version 100
+precision mediump float;
+attribute vec4 pos;
+varying vec2 uv;
+uniform mat4 mvp;
+
+void main() {
+	uv = pos.zw;
+	gl_Position = mvp*vec4(pos.xy, 0.0, 1.0);
+}
+</script>
+
+<script type="x-shader/x-fragment" id="bg-fs">
+#version 100
+precision mediump float;
+varying vec2 uv;
+uniform sampler2D tex;
+
+void main() {
+	gl_FragColor = texture2D(tex, uv);
+}
+</script>
+
 </head>
 
 <body onload="main();">
-<canvas id="can" width="640" height="480"></canvas>
+<canvas id="can" width="640" height="512"></canvas>
 <script type="text/javascript" src="estk.min.js"></script>
 <script type="text/javascript" src="game.js"></script>
 </body>
