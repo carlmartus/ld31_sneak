@@ -14,6 +14,9 @@ var SP_CROSS = [1, 0];
 var SP_BOX_FREE = [1, 0];
 var SP_BOX_TAKEN = [2, 0];
 var SP_PLAYER_IDLE = [8, 1];
+var SP_TABLET = [3, 0];
+var SP_ICON_HIDE = [4, 0];
+var SP_ICON_HIDE_ATTACK = [5, 0];
 
 var SP_PLAYER = [0, 1];
 var SP_AI_RED = [0, 2];

@@ -27,7 +27,7 @@ function bgInit() {
 	var uniTex = bgProgram.getUniform('tex');
 
 	bgMvp = esMat4_create();
-	esMat4_ortho(bgMvp, 0.0, 512.0, 640.0, 0.0);
+	esMat4_ortho(bgMvp, 0.0, 512.0, 512.0, 0.0);
 	gl.uniformMatrix4fv(uniMvp, false, bgMvp);
 	gl.uniform1i(uniTex, 0);
 }
@@ -46,6 +46,10 @@ var avatarWalker;
 var avatarLastWalkerState;
 var avatarState;
 var avatarQueueMouse;
+var avatarActionX;
+var avatarActionY;
+var avatarActionSprite;
+var avatarAction;
 
 var AV_WAITING = 1;
 var AV_WALKING = 2;
@@ -69,13 +73,39 @@ function avatarFrame(ft) {
 		spriteAdd(avatarWalker.x, avatarWalker.y,
 				32, SP_PLAYER_IDLE);
 	}
+
+	if (avatarAction) {
+		spriteAdd(avatarActionX, avatarActionY, 32, SP_TABLET);
+		spriteAdd(avatarActionX, avatarActionY, 32,
+				avatarActionSprite);
+	}
 }
 
 function avatarMouse(x, y) {
 	if (avatarState != AV_WAITING) {
 		avatarQueueMouse = [ x, y ];
 	} else {
-		avatarDirMove(x, y);
+		if (avatarAction != ACTION_NONE && avatarOnAction(x, y)) {
+			avatarWalker.goAction(avatarAction);
+		} else {
+			avatarDirMove(x, y);
+		}
+	}
+}
+
+function avatarUpdateActions(action) {
+	avatarAction = action;
+	avatarActionX = avatarWalker.x;
+	avatarActionY = avatarWalker.y + 40;
+
+	switch (action) {
+		case ACTION_HIDE :
+			avatarActionSprite = SP_ICON_HIDE;
+			break;
+
+		case ACTION_HIDE_ATTACK :
+			avatarActionSprite = SP_ICON_HIDE_ATTACK;
+			break;
 	}
 }
 
@@ -89,10 +119,12 @@ function avatarUpdateState() {
 				avatarQueueMouse = null;
 				avatarMouse(qx, qy);
 			}
+			avatarUpdateActions(avatarWalker.from.action);
 			break;
 
 		case NW_WALKING :
 			avatarState = AV_WALKING;
+			avatarUpdateActions(0);
 			break;
 	}
 }
@@ -104,7 +136,7 @@ function avatarDirMove(x, y) {
 	var abx = Math.abs(dx);
 	var aby = Math.abs(dy);
 
-	if (abx < 32 && aby < 32) return;
+	if (abx < 16 && aby < 16) return;
 
 	if (abx >= aby) {
 		if (dx > 0) {
@@ -119,6 +151,13 @@ function avatarDirMove(x, y) {
 			avatarWalker.goSouth();
 		}
 	}
+}
+
+function avatarOnAction(x, y) {
+	var abx = Math.abs(x - avatarActionX);
+	var aby = Math.abs(y - avatarActionY);
+
+	return abx < 16 && aby < 16;
 }
 
 var aiList;
@@ -190,6 +229,9 @@ var SP_CROSS = [1, 0];
 var SP_BOX_FREE = [1, 0];
 var SP_BOX_TAKEN = [2, 0];
 var SP_PLAYER_IDLE = [8, 1];
+var SP_TABLET = [3, 0];
+var SP_ICON_HIDE = [4, 0];
+var SP_ICON_HIDE_ATTACK = [5, 0];
 
 var SP_PLAYER = [0, 1];
 var SP_AI_RED = [0, 2];
@@ -273,6 +315,10 @@ var nodeList;
 var NW_IDLE = 0;
 var NW_WALKING = 1;
 
+var ACTION_NONE = 0;
+var ACTION_HIDE = 1;
+var ACTION_HIDE_ATTACK = 2;
+
 var nodeAiStart;
 var nodePlayerStart;
 
@@ -283,8 +329,8 @@ function nodeInit() {
 	var nord1 = packNode(215, 53);
 	var nord2 = packNode(62, 161);
 	var nord3 = packNode(218, 153);
-	var nordBox0 = packNode(153, 48);
-	var nordBox1 = packNode(153, 31, SP_BOX_FREE);
+	var nordBox0 = packNode(153, 48, ACTION_HIDE);
+	var nordBox1 = packNode(153, 31, ACTION_HIDE_ATTACK);
 
 	var alley0 = packNode(293, 148);
 	var alley1 = packNode(346, 150);
@@ -297,7 +343,7 @@ function nodeInit() {
 
 	nord0.linkWest(nordBox0);
 	nordBox0.linkWest(nord1);
-	nordBox1.linkHide(nordBox0);
+	nordBox0.linkHide(nordBox1);
 	nord0.linkSouth(nord2);
 	nord2.linkWest(nord3);
 	nord1.linkSouth(nord3);
@@ -324,8 +370,8 @@ function nodeRender() {
 	}
 }
 
-function packNode(x, y, special) {
-	var node = new Node(x, y, special);
+function packNode(x, y, action) {
+	var node = new Node(x, y, !action ? 0 : action);
 	nodeList.push(node);
 	return node;
 }
@@ -425,24 +471,53 @@ NodeWalker.prototype.goRandom = function() {
 	this.travel(poss[Math.floor(Math.random()*poss.length)]);
 }
 
-NodeWalker.prototype.goWest		= function() { if (this.from.west	!= null) this.travel(this.from.west) }
-NodeWalker.prototype.goEast		= function() { if (this.from.east	!= null) this.travel(this.from.east) }
-NodeWalker.prototype.goSouth	= function() { if (this.from.south	!= null) this.travel(this.from.south) }
-NodeWalker.prototype.goNorth	= function() { if (this.from.north	!= null) this.travel(this.from.north) }
+function goConditional(walker, target) {
+	if (target != null) {
+		walker.travel(target);
+	} else if (walker.from.rebase != null) {
+		walker.travel(walker.from.rebase);
+	}
+}
 
-function Node(x, y, special) {
+NodeWalker.prototype.goWest		= function() { goConditional(this, this.from.west); }
+NodeWalker.prototype.goEast		= function() { goConditional(this, this.from.east); }
+NodeWalker.prototype.goSouth	= function() { goConditional(this, this.from.south); }
+NodeWalker.prototype.goNorth	= function() { goConditional(this, this.from.north); }
+
+NodeWalker.prototype.goAction = function(action) {
+	switch (action) {
+		case ACTION_HIDE :
+			this.travel(this.from.hide);
+			break;
+
+		default :
+			this.travel(this.from.rebase);
+			break;
+	}
+}
+
+function Node(x, y, action) {
 	this.x = x;
 	this.y = y;
-	this.special = special;
+	this.action = action;
+	this.occupied = false;
 	this.east = this.west = this.north = this.south = null;
 	this.rebase = this.hide = null;
 }
 
+Node.prototype.renderSprite = function(id) {
+	spriteAdd(this.x, this.y, 32, id);
+}
+
 Node.prototype.render = function() {
-	if (this.special) {
-		spriteAdd(this.x, this.y, 32, this.special);
-	} else {
-		spriteAdd(this.x, this.y, 16.0, SP_NODE);
+	switch (this.action) {
+		case ACTION_HIDE_ATTACK :
+			this.renderSprite(this.occupied ?
+					SP_BOX_TAKEN : SP_BOX_FREE);
+			break;
+
+		default :
+			this.renderSprite(SP_NODE);
 	}
 }
 
@@ -458,7 +533,7 @@ Node.prototype.linkSouth = function(target) {
 
 Node.prototype.linkHide = function(target) {
 	this.hide = target;
-	this.rebase = this;
+	target.rebase = this;
 }
 
 var gl;

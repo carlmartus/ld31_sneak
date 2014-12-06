@@ -2,6 +2,10 @@ var avatarWalker;
 var avatarLastWalkerState;
 var avatarState;
 var avatarQueueMouse;
+var avatarActionX;
+var avatarActionY;
+var avatarActionSprite;
+var avatarAction;
 
 var AV_WAITING = 1;
 var AV_WALKING = 2;
@@ -25,13 +29,39 @@ function avatarFrame(ft) {
 		spriteAdd(avatarWalker.x, avatarWalker.y,
 				32, SP_PLAYER_IDLE);
 	}
+
+	if (avatarAction) {
+		spriteAdd(avatarActionX, avatarActionY, 32, SP_TABLET);
+		spriteAdd(avatarActionX, avatarActionY, 32,
+				avatarActionSprite);
+	}
 }
 
 function avatarMouse(x, y) {
 	if (avatarState != AV_WAITING) {
 		avatarQueueMouse = [ x, y ];
 	} else {
-		avatarDirMove(x, y);
+		if (avatarAction != ACTION_NONE && avatarOnAction(x, y)) {
+			avatarWalker.goAction(avatarAction);
+		} else {
+			avatarDirMove(x, y);
+		}
+	}
+}
+
+function avatarUpdateActions(action) {
+	avatarAction = action;
+	avatarActionX = avatarWalker.x;
+	avatarActionY = avatarWalker.y + 40;
+
+	switch (action) {
+		case ACTION_HIDE :
+			avatarActionSprite = SP_ICON_HIDE;
+			break;
+
+		case ACTION_HIDE_ATTACK :
+			avatarActionSprite = SP_ICON_HIDE_ATTACK;
+			break;
 	}
 }
 
@@ -45,10 +75,12 @@ function avatarUpdateState() {
 				avatarQueueMouse = null;
 				avatarMouse(qx, qy);
 			}
+			avatarUpdateActions(avatarWalker.from.action);
 			break;
 
 		case NW_WALKING :
 			avatarState = AV_WALKING;
+			avatarUpdateActions(0);
 			break;
 	}
 }
@@ -60,7 +92,7 @@ function avatarDirMove(x, y) {
 	var abx = Math.abs(dx);
 	var aby = Math.abs(dy);
 
-	if (abx < 32 && aby < 32) return;
+	if (abx < 16 && aby < 16) return;
 
 	if (abx >= aby) {
 		if (dx > 0) {
@@ -75,5 +107,12 @@ function avatarDirMove(x, y) {
 			avatarWalker.goSouth();
 		}
 	}
+}
+
+function avatarOnAction(x, y) {
+	var abx = Math.abs(x - avatarActionX);
+	var aby = Math.abs(y - avatarActionY);
+
+	return abx < 16 && aby < 16;
 }
 

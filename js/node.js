@@ -3,6 +3,10 @@ var nodeList;
 var NW_IDLE = 0;
 var NW_WALKING = 1;
 
+var ACTION_NONE = 0;
+var ACTION_HIDE = 1;
+var ACTION_HIDE_ATTACK = 2;
+
 var nodeAiStart;
 var nodePlayerStart;
 
@@ -13,8 +17,8 @@ function nodeInit() {
 	var nord1 = packNode(215, 53);
 	var nord2 = packNode(62, 161);
 	var nord3 = packNode(218, 153);
-	var nordBox0 = packNode(153, 48);
-	var nordBox1 = packNode(153, 31, SP_BOX_FREE);
+	var nordBox0 = packNode(153, 48, ACTION_HIDE);
+	var nordBox1 = packNode(153, 31, ACTION_HIDE_ATTACK);
 
 	var alley0 = packNode(293, 148);
 	var alley1 = packNode(346, 150);
@@ -27,7 +31,7 @@ function nodeInit() {
 
 	nord0.linkWest(nordBox0);
 	nordBox0.linkWest(nord1);
-	nordBox1.linkHide(nordBox0);
+	nordBox0.linkHide(nordBox1);
 	nord0.linkSouth(nord2);
 	nord2.linkWest(nord3);
 	nord1.linkSouth(nord3);
@@ -54,8 +58,8 @@ function nodeRender() {
 	}
 }
 
-function packNode(x, y, special) {
-	var node = new Node(x, y, special);
+function packNode(x, y, action) {
+	var node = new Node(x, y, !action ? 0 : action);
 	nodeList.push(node);
 	return node;
 }
@@ -155,24 +159,53 @@ NodeWalker.prototype.goRandom = function() {
 	this.travel(poss[Math.floor(Math.random()*poss.length)]);
 }
 
-NodeWalker.prototype.goWest		= function() { if (this.from.west	!= null) this.travel(this.from.west) }
-NodeWalker.prototype.goEast		= function() { if (this.from.east	!= null) this.travel(this.from.east) }
-NodeWalker.prototype.goSouth	= function() { if (this.from.south	!= null) this.travel(this.from.south) }
-NodeWalker.prototype.goNorth	= function() { if (this.from.north	!= null) this.travel(this.from.north) }
+function goConditional(walker, target) {
+	if (target != null) {
+		walker.travel(target);
+	} else if (walker.from.rebase != null) {
+		walker.travel(walker.from.rebase);
+	}
+}
 
-function Node(x, y, special) {
+NodeWalker.prototype.goWest		= function() { goConditional(this, this.from.west); }
+NodeWalker.prototype.goEast		= function() { goConditional(this, this.from.east); }
+NodeWalker.prototype.goSouth	= function() { goConditional(this, this.from.south); }
+NodeWalker.prototype.goNorth	= function() { goConditional(this, this.from.north); }
+
+NodeWalker.prototype.goAction = function(action) {
+	switch (action) {
+		case ACTION_HIDE :
+			this.travel(this.from.hide);
+			break;
+
+		default :
+			this.travel(this.from.rebase);
+			break;
+	}
+}
+
+function Node(x, y, action) {
 	this.x = x;
 	this.y = y;
-	this.special = special;
+	this.action = action;
+	this.occupied = false;
 	this.east = this.west = this.north = this.south = null;
 	this.rebase = this.hide = null;
 }
 
+Node.prototype.renderSprite = function(id) {
+	spriteAdd(this.x, this.y, 32, id);
+}
+
 Node.prototype.render = function() {
-	if (this.special) {
-		spriteAdd(this.x, this.y, 32, this.special);
-	} else {
-		spriteAdd(this.x, this.y, 16.0, SP_NODE);
+	switch (this.action) {
+		case ACTION_HIDE_ATTACK :
+			this.renderSprite(this.occupied ?
+					SP_BOX_TAKEN : SP_BOX_FREE);
+			break;
+
+		default :
+			this.renderSprite(SP_NODE);
 	}
 }
 
@@ -188,6 +221,6 @@ Node.prototype.linkSouth = function(target) {
 
 Node.prototype.linkHide = function(target) {
 	this.hide = target;
-	this.rebase = this;
+	target.rebase = this;
 }
 

@@ -27,7 +27,7 @@ function bgInit() {
 	var uniTex = bgProgram.getUniform('tex');
 
 	bgMvp = esMat4_create();
-	esMat4_ortho(bgMvp, 0.0, 512.0, 640.0, 0.0);
+	esMat4_ortho(bgMvp, 0.0, 512.0, 512.0, 0.0);
 	gl.uniformMatrix4fv(uniMvp, false, bgMvp);
 	gl.uniform1i(uniTex, 0);
 }

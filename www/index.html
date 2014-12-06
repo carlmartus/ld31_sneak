@@ -58,14 +58,19 @@ varying vec2 uv;
 uniform sampler2D tex;
 
 void main() {
-	gl_FragColor = texture2D(tex, uv);
+	vec4 col = texture2D(tex, uv);
+	if (col.a > 0.9) {
+		gl_FragColor = col;
+	} else {
+		gl_FragColor = vec4(0.5, 0.5, 1.0, 1.0);
+	}
 }
 </script>
 
 </head>
 
 <body onload="main();">
-<canvas id="can" width="640" height="512"></canvas>
+<canvas id="can" width="512" height="512"></canvas>
 <script type="text/javascript" src="estk.min.js"></script>
 <script type="text/javascript" src="game.js"></script>
 </body>
