@@ -23,6 +23,7 @@ function makeTexture(img) {
 function loaded() {
 	bgInit();
 	spriteInit();
+	nodeInit();
 
 	texBg = makeTexture(imgBg);
 	texSprites = makeTexture(imgSprites);
