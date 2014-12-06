@@ -139,6 +139,7 @@ function shouldGo(walker, dir, list) {
 }
 
 Node.prototype.equals = function(other) {
+	if (other == null || this == null) return false;
 	return this.x == other.x && this.y == other.y;
 }
 

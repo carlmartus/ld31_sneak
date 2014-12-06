@@ -67,6 +67,34 @@ void main() {
 }
 </script>
 
+<script type="x-shader/x-vertex" id="death-vs">
+#version 100
+precision mediump float;
+attribute vec4 pos;
+varying vec2 uv;
+
+void main() {
+	uv = pos.zw;
+	vec2 xy = vec2(
+		pos.x - 0.5,
+		pos.y - 0.3);
+	gl_Position = vec4(xy, 0.0, 1.0);
+}
+</script>
+
+<script type="x-shader/x-fragment" id="death-fs">
+#version 100
+precision mediump float;
+varying vec2 uv;
+uniform sampler2D tex;
+
+void main() {
+	vec4 col = texture2D(tex, uv);
+	if (col.a < 0.5) discard;
+	gl_FragColor = col;
+}
+</script>
+
 </head>
 
 <body onload="main();">

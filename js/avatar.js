@@ -7,6 +7,10 @@ var avatarActionY;
 var avatarActionSprite;
 var avatarAction;
 
+var avatarNodeAt;
+var avatarNodeTravelA;
+var avatarNodeTravelB;
+
 var AV_WAITING = 1;
 var AV_WALKING = 2;
 
@@ -69,6 +73,9 @@ function avatarUpdateState() {
 	switch (avatarWalker.state) {
 		case NW_IDLE :
 			avatarState = AV_WAITING;
+			avatarNodeAt = avatarWalker.from;
+			avatarNodeTravelA = avatarNodeTravelB = null;
+
 			if (avatarQueueMouse != null) {
 				var qx = avatarQueueMouse[0];
 				var qy = avatarQueueMouse[1];
@@ -80,6 +87,9 @@ function avatarUpdateState() {
 
 		case NW_WALKING :
 			avatarState = AV_WALKING;
+			avatarNodeAt = null;
+			avatarNodeTravelA = avatarWalker.from;
+			avatarNodeTravelB = avatarWalker.dest;
 			avatarUpdateActions(0);
 			break;
 	}

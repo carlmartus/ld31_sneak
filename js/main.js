@@ -1,13 +1,17 @@
 var gl;
 var imgBg;
 var imgSprites;
+var imgCsKnife;
 var frameFunc;
+
 var texBg;
 var texSprites;
+var texCsKnife;
 
 function frameExec(ft) {
 	if (ft > 0.3) return;
 
+	gl.clear(gl.COLOR_BUFFER_BIT);
 	if (frameFunc != null) frameFunc(ft);
 	spriteFlush();
 }
@@ -28,15 +32,21 @@ function loaded() {
 	nodeInit();
 	aiInit();
 	avatarInit();
+	deathInit();
 
 	texBg = makeTexture(imgBg);
 	texSprites = makeTexture(imgSprites);
+	texCsKnife = makeTexture(imgCsKnife);
 
 	var canvas = document.getElementById('can');
 	canvas.addEventListener('mousedown', mouseEvent, false);
 
-	frameFunc = playFrame;
 	esNextFrame(frameExec);
+
+	deathQueue(texCsKnife, 'sneak', 2, null);
+	deathQueue(texCsKnife, 'and', 2, null);
+	deathQueue(texCsKnife, 'assasinate', 4, null);
+	modeDeath();
 }
 
 function main() {
@@ -50,6 +60,7 @@ function main() {
 	var lod = new esLoad();
 	imgBg = lod.loadImage('bg.png');
 	imgSprites = lod.loadImage('sprites.png');
+	imgCsKnife = lod.loadImage('cs_knife.png');
 	lod.download(loaded);
 }
 
@@ -59,6 +70,14 @@ function mouseEvent(event) {
 	avatarMouse(
 			event.clientX - rect.x,
 			event.clientY - rect.y);
+}
+
+function modePlay() {
+	frameFunc = playFrame;
+}
+
+function modeDeath() {
+	frameFunc = deathFrame;
 }
 
 function assert(cond, msg) {

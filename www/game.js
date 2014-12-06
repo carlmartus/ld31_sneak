@@ -42,6 +42,95 @@ function bgRender() {
 	gl.disableVertexAttribArray(0);
 }
 
+var gl;
+var imgBg;
+var imgSprites;
+var imgCsKnife;
+var frameFunc;
+
+var texBg;
+var texSprites;
+var texCsKnife;
+
+function frameExec(ft) {
+	if (ft > 0.3) return;
+
+	gl.clear(gl.COLOR_BUFFER_BIT);
+	if (frameFunc != null) frameFunc(ft);
+	spriteFlush();
+}
+
+function makeTexture(img) {
+	var tex = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, tex);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+	assert(tex != null, tex);
+	return tex;
+}
+
+function loaded() {
+	bgInit();
+	spriteInit();
+	nodeInit();
+	aiInit();
+	avatarInit();
+	deathInit();
+
+	texBg = makeTexture(imgBg);
+	texSprites = makeTexture(imgSprites);
+	texCsKnife = makeTexture(imgCsKnife);
+
+	var canvas = document.getElementById('can');
+	canvas.addEventListener('mousedown', mouseEvent, false);
+
+	esNextFrame(frameExec);
+
+	deathQueue(texCsKnife, 'sneak', 2, null);
+	deathQueue(texCsKnife, 'and', 2, null);
+	deathQueue(texCsKnife, 'assasinate', 4, null);
+	modeDeath();
+}
+
+function main() {
+	frameFunc = null;
+
+	gl = esInitGl('can');
+
+	gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	gl.clear(gl.COLOR_BUFFER_BIT);
+
+	var lod = new esLoad();
+	imgBg = lod.loadImage('bg.png');
+	imgSprites = lod.loadImage('sprites.png');
+	imgCsKnife = lod.loadImage('cs_knife.png');
+	lod.download(loaded);
+}
+
+function mouseEvent(event) {
+	var canvas = document.getElementById('can');
+	var rect = canvas.getBoundingClientRect();
+	avatarMouse(
+			event.clientX - rect.x,
+			event.clientY - rect.y);
+}
+
+function modePlay() {
+	frameFunc = playFrame;
+}
+
+function modeDeath() {
+	frameFunc = deathFrame;
+}
+
+function assert(cond, msg) {
+	if (!cond) {
+		alert(msg);
+		throw new Error(cond, msg);
+	}
+}
+
 var avatarWalker;
 var avatarLastWalkerState;
 var avatarState;
@@ -50,6 +139,10 @@ var avatarActionX;
 var avatarActionY;
 var avatarActionSprite;
 var avatarAction;
+
+var avatarNodeAt;
+var avatarNodeTravelA;
+var avatarNodeTravelB;
 
 var AV_WAITING = 1;
 var AV_WALKING = 2;
@@ -113,6 +206,9 @@ function avatarUpdateState() {
 	switch (avatarWalker.state) {
 		case NW_IDLE :
 			avatarState = AV_WAITING;
+			avatarNodeAt = avatarWalker.from;
+			avatarNodeTravelA = avatarNodeTravelB = null;
+
 			if (avatarQueueMouse != null) {
 				var qx = avatarQueueMouse[0];
 				var qy = avatarQueueMouse[1];
@@ -124,6 +220,9 @@ function avatarUpdateState() {
 
 		case NW_WALKING :
 			avatarState = AV_WALKING;
+			avatarNodeAt = null;
+			avatarNodeTravelA = avatarWalker.from;
+			avatarNodeTravelB = avatarWalker.dest;
 			avatarUpdateActions(0);
 			break;
 	}
@@ -164,6 +263,7 @@ var aiList;
 var aiWave = 0;
 
 var AI_RAND = 32;
+var CAUGHT_RAD = 10;
 
 function aiInit() {
 	aiNextWave();
@@ -185,6 +285,7 @@ function aiNextWave() {
 }
 
 function Ai(startNode, spriteBase) {
+	this.attack = false;
 	this.orgSpeed = 20+Math.random()*15;
 	this.walker = new NodeWalker(startNode, this.orgSpeed);
 	this.offsetX = (Math.random() - 0.5)*AI_RAND;
@@ -195,8 +296,7 @@ function Ai(startNode, spriteBase) {
 
 Ai.prototype.frame = function(ft) {
 	if (this.walker.state == NW_IDLE) {
-		this.walker.goRandom();
-		this.walker.speed = this.orgSpeed;
+		this.planTravel();
 	}
 	this.walker.frame(ft);
 
@@ -211,6 +311,53 @@ Ai.prototype.frame = function(ft) {
 			Math.floor(this.walker.x + this.offsetX),
 			Math.floor(this.walker.y + this.offsetY) + yOffset,
 			24.0, ani);
+
+	if (this.caughtPlayer()) {
+		deathQueue(texCsKnife, 'knife attacku', 4, null);
+		modeDeath();
+		modeDeath();
+	}
+}
+
+Ai.prototype.planTravel = function() {
+	if (this.isSeePlayer()) {
+		this.walker.speed = this.orgSpeed*2;
+		this.attack = true;
+
+		var playerDest = avatarNodeAt;
+		if (playerDest == null) playerDest = avatarNodeTravelB;
+
+		this.walker.travel(playerDest);
+	} else {
+		this.walker.speed = this.orgSpeed;
+		this.walker.goRandom();
+	}
+
+}
+
+Ai.prototype.caughtPlayer = function() {
+	var abx = Math.abs(this.walker.x - avatarWalker.x);
+	var aby = Math.abs(this.walker.y - avatarWalker.y);
+	return abx < CAUGHT_RAD && aby < CAUGHT_RAD;
+}
+
+Ai.prototype.isSeePlayer = function() {
+	if (this.walker.from.equals(avatarNodeAt)) return true;
+
+	if (isAvatarTravel(this.walker.from, this.walker.from.west)) return true;
+	if (isAvatarTravel(this.walker.from, this.walker.from.east)) return true;
+	if (isAvatarTravel(this.walker.from, this.walker.from.north)) return true;
+	if (isAvatarTravel(this.walker.from, this.walker.from.south)) return true;
+	return false;
+}
+
+function isAvatarTravel(a, b) {
+	if (b == null) return false;
+	if (a.equals(avatarNodeTravelA) && b.equals(avatarNodeTravelB)) return true;
+	if (a.equals(avatarNodeTravelB) && b.equals(avatarNodeTravelA)) return true;
+
+	if (avatarNodeAt != null && avatarNodeAt.equals(b)) return true;
+	return false;
 }
 
 var spriteList;
@@ -276,6 +423,27 @@ function spriteAdd(x, y, size, uvId) {
 	spriteList[offset+3] = uvId[1];
 	spriteList[offset+4] = size;
 	spriteCount++;
+}
+
+function spriteAddText(x, y, size, text) {
+	var aStart = 'a'.charCodeAt(0);
+	var qStart = 'q'.charCodeAt(0);
+
+	for (var i=0; i<text.length; i++) {
+		var code = text.charCodeAt(i);
+
+		var id = code - aStart;
+		if (id >= 0 && id < 16) {
+			spriteAdd(x, y, size, [id, 14]);
+		}
+
+		var id = code - qStart;
+		if (id >= 0 && id < 16) {
+			spriteAdd(x, y, size, [id, 15]);
+		}
+
+		x += size;
+	}
 }
 
 function spriteFlush() {
@@ -451,6 +619,7 @@ function shouldGo(walker, dir, list) {
 }
 
 Node.prototype.equals = function(other) {
+	if (other == null || this == null) return false;
 	return this.x == other.x && this.y == other.y;
 }
 
@@ -536,78 +705,69 @@ Node.prototype.linkHide = function(target) {
 	target.rebase = this;
 }
 
-var gl;
-var imgBg;
-var imgSprites;
-var frameFunc;
-var texBg;
-var texSprites;
+var deathQ;
+var deathTexture;
+var deathText;
+var deathDuration;
 
-function frameExec(ft) {
-	if (ft > 0.3) return;
+var deathProgram;
+var deathVbo;
+var deathUniTex;
 
-	if (frameFunc != null) frameFunc(ft);
-	spriteFlush();
+function deathInit() {
+	deathQ = [];
+	deathDuration = 0.0;
+
+	var vertData = new Float32Array([
+			0.0, 0.0, 0.0, 1.0,
+			1.0, 0.0, 1.0, 1.0,
+			0.0, 1.0, 0.0, 0.0,
+			1.0, 1.0, 1.0, 0.0]);
+
+	deathVbo = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, deathVbo);
+	gl.bufferData(gl.ARRAY_BUFFER, vertData, gl.STATIC_DRAW);
+
+	deathProgram = new esProgram(gl);
+	deathProgram.addShaderId('death-fs', ES_FRAGMENT);
+	deathProgram.addShaderId('death-vs', ES_VERTEX);
+	deathProgram.bindAttribute(0, 'pos');
+	deathProgram.link();
+	deathUniTex = deathProgram.getUniform('tex');
 }
 
-function makeTexture(img) {
-	var tex = gl.createTexture();
-	gl.bindTexture(gl.TEXTURE_2D, tex);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-	assert(tex != null, tex);
-	return tex;
+function deathQueue(texture, text, duration, sound) {
+	deathQ.push([texture, text, duration]);
 }
 
-function loaded() {
-	bgInit();
-	spriteInit();
-	nodeInit();
-	aiInit();
-	avatarInit();
-
-	texBg = makeTexture(imgBg);
-	texSprites = makeTexture(imgSprites);
-
-	var canvas = document.getElementById('can');
-	canvas.addEventListener('mousedown', mouseEvent, false);
-
-	frameFunc = playFrame;
-	esNextFrame(frameExec);
-}
-
-function main() {
-	frameFunc = null;
-
-	gl = esInitGl('can');
-
-	gl.clearColor(0.0, 0.0, 0.0, 1.0);
-	gl.clear(gl.COLOR_BUFFER_BIT);
-
-	var lod = new esLoad();
-	imgBg = lod.loadImage('bg.png');
-	imgSprites = lod.loadImage('sprites.png');
-	lod.download(loaded);
-}
-
-function mouseEvent(event) {
-	var canvas = document.getElementById('can');
-	var rect = canvas.getBoundingClientRect();
-	avatarMouse(
-			event.clientX - rect.x,
-			event.clientY - rect.y);
-}
-
-function assert(cond, msg) {
-	if (!cond) {
-		alert(msg);
-		throw new Error(cond, msg);
+function deathFrame(ft) {
+	if (deathDuration <= 0.0) {
+		if (deathQ.length <= 0) {
+			modePlay();
+		} else {
+			var line = deathQ.shift();
+			deathTexture = line[0];
+			deathText = line[1];
+			deathDuration = line[2];
+			var sound = line[3];
+		}
 	}
+
+	gl.bindTexture(gl.TEXTURE_2D, deathTexture);
+	deathProgram.use();
+	gl.enableVertexAttribArray(0);
+	gl.bindBuffer(gl.ARRAY_BUFFER, deathVbo);
+	gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 0, 0);
+	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+	gl.disableVertexAttribArray(0);
+
+	var midX = 256 - ((deathText.length / 2) - 0.5)*32;
+	spriteAddText(midX, 400, 32, deathText);
+
+	deathDuration -= ft;
 }
 
 function playFrame(ft) {
-	gl.clear(gl.COLOR_BUFFER_BIT);
 	bgRender();
 
 	nodeRender();

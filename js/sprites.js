@@ -63,6 +63,27 @@ function spriteAdd(x, y, size, uvId) {
 	spriteCount++;
 }
 
+function spriteAddText(x, y, size, text) {
+	var aStart = 'a'.charCodeAt(0);
+	var qStart = 'q'.charCodeAt(0);
+
+	for (var i=0; i<text.length; i++) {
+		var code = text.charCodeAt(i);
+
+		var id = code - aStart;
+		if (id >= 0 && id < 16) {
+			spriteAdd(x, y, size, [id, 14]);
+		}
+
+		var id = code - qStart;
+		if (id >= 0 && id < 16) {
+			spriteAdd(x, y, size, [id, 15]);
+		}
+
+		x += size;
+	}
+}
+
 function spriteFlush() {
 	if (spriteCount <= 0) return;
 
