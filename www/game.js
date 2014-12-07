@@ -32,7 +32,7 @@ function bgInit() {
 	gl.uniform1i(uniTex, 0);
 }
 
-function bgRender() {
+function bgRenderPre() {
 	bgProgram.use();
 	gl.bindTexture(gl.TEXTURE_2D, texBg);
 	gl.enableVertexAttribArray(0);
@@ -40,6 +40,11 @@ function bgRender() {
 	gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 0, 0);
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	gl.disableVertexAttribArray(0);
+}
+
+function bgRenderPost() {
+	spriteAdd(95, 63, 32, SP_BRUSH0);
+	spriteAdd(130, 69, 32, SP_BRUSH0);
 }
 
 var gl;
@@ -127,9 +132,11 @@ function mouseEvent(event) {
 
 	var canvas = document.getElementById('can');
 	var rect = canvas.getBoundingClientRect();
-	avatarSetMouse(
-			event.clientX - rect.x,
-			event.clientY - rect.y);
+
+	var x = event.clientX - rect.x;
+	var y = event.clientY - rect.y;
+	console.log(event, rect, x, y);
+	avatarSetMouse(x, y);
 }
 
 function modePlay() {
@@ -522,6 +529,8 @@ var SP_ICON_HIDE = [4, 0];
 var SP_ICON_HIDE_ATTACK = [5, 0];
 var SP_ICON_TELEPORT = [6, 0];
 var SP_ICON_KNIFE = [7, 0];
+
+var SP_BRUSH0 = [0, 11];
 
 var SP_PLAYER = [0, 1];
 var SP_AI_RED = [0, 2];
@@ -948,11 +957,13 @@ function deathFrame(ft) {
 }
 
 function playFrame(ft) {
-	bgRender();
+	bgRenderPre();
 
 	nodeRender();
 
 	avatarFrame(ft);
 	aiFrame(ft);
+
+	bgRenderPost();
 }
 

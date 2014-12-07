@@ -32,7 +32,7 @@ function bgInit() {
 	gl.uniform1i(uniTex, 0);
 }
 
-function bgRender() {
+function bgRenderPre() {
 	bgProgram.use();
 	gl.bindTexture(gl.TEXTURE_2D, texBg);
 	gl.enableVertexAttribArray(0);
@@ -40,5 +40,10 @@ function bgRender() {
 	gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 0, 0);
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	gl.disableVertexAttribArray(0);
+}
+
+function bgRenderPost() {
+	spriteAdd(95, 63, 32, SP_BRUSH0);
+	spriteAdd(130, 69, 32, SP_BRUSH0);
 }
 

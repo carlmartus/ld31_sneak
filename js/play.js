@@ -1,9 +1,11 @@
 function playFrame(ft) {
-	bgRender();
+	bgRenderPre();
 
 	nodeRender();
 
 	avatarFrame(ft);
 	aiFrame(ft);
+
+	bgRenderPost();
 }
 
