@@ -151,9 +151,9 @@ function loaded() {
 
 	esNextFrame(frameExec);
 
-	deathQueue(texCsRedWin, 'sneak', 2, null);
-	deathQueue(texCsKnife, 'locate weapons', 2, null);
-	deathQueue(texCsRedKill, 'assasinate', 4, null);
+	deathQueue(texCsRedWin, 'sneak', 2, sndLaugh);
+	deathQueue(texCsKnife, 'locate weapons', 2, sndAttack0);
+	deathQueue(texCsRedKill, 'assasinate', 4, sndPou);
 	modeDeath();
 }
 
@@ -473,7 +473,7 @@ function aiInit() {
 	AIMSG_MUD_FAIL = [texCsMudFail, 'ha ha ha', sndWhat];
 	AIMSG_MUD_LOSE = [texCsMudKill, 'splat', sndPou];
 
-	aiWave = 2;
+	aiWave = 0;
 	aiRespawnWave();
 }
 
