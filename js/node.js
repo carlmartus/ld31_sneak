@@ -56,8 +56,8 @@ function nodeInit() {
 
 	alley2.linkTeleport(nord0);
 
-	nodeAiStart0 = alley1;
-	nodePlayerStart = nord1;
+	nodeAiStart0 = nord1;
+	nodePlayerStart = alley1;
 }
 
 function nodeRender() {
@@ -189,10 +189,12 @@ NodeWalker.prototype.goEast		= function() { goConditional(this, this.from.east);
 NodeWalker.prototype.goSouth	= function() { goConditional(this, this.from.south); }
 NodeWalker.prototype.goNorth	= function() { goConditional(this, this.from.north); }
 
-NodeWalker.prototype.goAction = function(action) {
+NodeWalker.prototype.goAction = function(action, forceHidden) {
 	switch (action) {
 		case ACTION_HIDE :
-			this.travel(this.from.hide);
+			this.hidden = forceHidden == true;
+			this.travel(this.from.hide,
+					this.hidden ? 5:1);
 			break;
 
 		case ACTION_TELEPORT :
@@ -201,6 +203,7 @@ NodeWalker.prototype.goAction = function(action) {
 			break;
 
 		default :
+			this.hidden = false || forceHidden == true;
 			this.travel(this.from.rebase);
 			break;
 	}

@@ -30,6 +30,10 @@ function avatarInit(start) {
 }
 
 function avatarFrame(ft) {
+	if (avatarQueueMouse) {
+		avatarMouse();
+	}
+
 	avatarWalker.frame(ft);
 	if (avatarLastWalkerState != avatarWalker.state) {
 		avatarLastWalkerState = avatarWalker.state;
@@ -71,10 +75,17 @@ function avatarFrame(ft) {
 	spriteAddText(12, 500, 16, WE_TEXT[avatarWeapon]);
 }
 
-function avatarMouse(x, y) {
-	if (avatarState != AV_WAITING) {
-		avatarQueueMouse = [ x, y ];
-	} else {
+function avatarSetMouse(x, y) {
+	avatarQueueMouse = [ x, y ];
+	avatarMouse();
+}
+
+function avatarMouse() {
+	if (avatarState == AV_WAITING) {
+		var x = avatarQueueMouse[0];
+		var y = avatarQueueMouse[1];
+		avatarQueueMouse = null;
+
 		if (avatarAction != ACTION_NONE && avatarOnAction(x, y)) {
 
 			switch (avatarAction) {
@@ -84,8 +95,8 @@ function avatarMouse(x, y) {
 
 				case ACTION_HIDE_ATTACK :
 					var target = avatarWalker.from.rebase;
-					aiAttack(target.x, target.y, avatarWeapon);
-					avatarWalker.goAction(avatarAction);
+					var suc = aiAttack(target.x, target.y, avatarWeapon);
+					avatarWalker.goAction(avatarAction, suc);
 					break;
 
 				default :
@@ -130,10 +141,7 @@ function avatarUpdateState() {
 			avatarNodeTravelA = avatarNodeTravelB = null;
 
 			if (avatarQueueMouse != null) {
-				var qx = avatarQueueMouse[0];
-				var qy = avatarQueueMouse[1];
-				avatarQueueMouse = null;
-				avatarMouse(qx, qy);
+				avatarMouse();
 			}
 			avatarUpdateActions(avatarWalker.from.action);
 			break;

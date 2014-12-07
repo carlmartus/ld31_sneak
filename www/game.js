@@ -100,6 +100,7 @@ function loaded() {
 	deathQueue(texCsKnife, 'and', 2, null);
 	deathQueue(texCsRedKill, 'assasinate', 4, null);
 	modeDeath();*/
+
 	modePlay();
 }
 
@@ -123,7 +124,7 @@ function main() {
 function mouseEvent(event) {
 	var canvas = document.getElementById('can');
 	var rect = canvas.getBoundingClientRect();
-	avatarMouse(
+	avatarSetMouse(
 			event.clientX - rect.x,
 			event.clientY - rect.y);
 }
@@ -175,6 +176,10 @@ function avatarInit(start) {
 }
 
 function avatarFrame(ft) {
+	if (avatarQueueMouse) {
+		avatarMouse();
+	}
+
 	avatarWalker.frame(ft);
 	if (avatarLastWalkerState != avatarWalker.state) {
 		avatarLastWalkerState = avatarWalker.state;
@@ -216,10 +221,17 @@ function avatarFrame(ft) {
 	spriteAddText(12, 500, 16, WE_TEXT[avatarWeapon]);
 }
 
-function avatarMouse(x, y) {
-	if (avatarState != AV_WAITING) {
-		avatarQueueMouse = [ x, y ];
-	} else {
+function avatarSetMouse(x, y) {
+	avatarQueueMouse = [ x, y ];
+	avatarMouse();
+}
+
+function avatarMouse() {
+	if (avatarState == AV_WAITING) {
+		var x = avatarQueueMouse[0];
+		var y = avatarQueueMouse[1];
+		avatarQueueMouse = null;
+
 		if (avatarAction != ACTION_NONE && avatarOnAction(x, y)) {
 
 			switch (avatarAction) {
@@ -229,8 +241,8 @@ function avatarMouse(x, y) {
 
 				case ACTION_HIDE_ATTACK :
 					var target = avatarWalker.from.rebase;
-					aiAttack(target.x, target.y, avatarWeapon);
-					avatarWalker.goAction(avatarAction);
+					var suc = aiAttack(target.x, target.y, avatarWeapon);
+					avatarWalker.goAction(avatarAction, suc);
 					break;
 
 				default :
@@ -275,10 +287,7 @@ function avatarUpdateState() {
 			avatarNodeTravelA = avatarNodeTravelB = null;
 
 			if (avatarQueueMouse != null) {
-				var qx = avatarQueueMouse[0];
-				var qy = avatarQueueMouse[1];
-				avatarQueueMouse = null;
-				avatarMouse(qx, qy);
+				avatarMouse();
 			}
 			avatarUpdateActions(avatarWalker.from.action);
 			break;
@@ -328,12 +337,16 @@ function avatarOnAction(x, y) {
 var aiList;
 var aiWave = 0;
 
-var AI_RAND = 32;
-var CAUGHT_RAD = 15;
+var AI_RAND = 16;
+var CAUGHT_RAD = 16;
 
-var AIMSG_RED = [texCsRedWin, 'you got caught'];
+var AIMSG_RED_WIN;
+var AIMSG_RED_LOSE;
 
 function aiInit() {
+	AIMSG_RED_WIN = [texCsRedWin, 'you got caught', null];
+	AIMSG_RED_LOSE = [texCsRedKill, 'take that', null];
+
 	aiWave = 0;
 	aiRespawnWave();
 }
@@ -345,17 +358,39 @@ function aiFrame(ft) {
 }
 
 function aiAttack(x, y, weapon) {
+	var killed = false;
 	for (var i=0; i<aiList.length; i++) {
+
 		if (aiList[i].caught(x, y)) {
+			switch (weapon) {
+				default :
+				case WE_NONE :
+					break;
+
+				case WE_KNIFE :
+					deathQueue(texCsKnife, 'thrust', 1, null);
+					break;
+			}
+
 			if (aiList[i].voln == weapon) {
+				deathQueue(
+						aiList[i].killMsg[0],
+						aiList[i].killMsg[1],
+						1,
+						aiList[i].killMsg[2]);
 				aiList.splice(i, 1);
-				i--;
+				killed = true;
 			} else {
 				aiList[i].attack = true;
 				aiList[i].speed = aiList[i].orgSpeed*3;
 			}
+
+			modeDeath();
+
+			return killed;
 		}
 	}
+	return false;
 }
 
 function aiRespawnWave() {
@@ -367,6 +402,10 @@ function aiRespawnWave() {
 			spawnRed();
 			spawnRed();
 			spawnRed();
+			spawnRed();
+			spawnRed();
+			spawnRed();
+			spawnRed();
 			break;
 	}
 }
@@ -374,10 +413,11 @@ function aiRespawnWave() {
 function spawnRed() {
 	aiList.push(
 			new Ai(
-				nodeAiStart0, SP_AI_RED, AIMSG_RED, WE_KNIFE));
+				nodeAiStart0, SP_AI_RED, AIMSG_RED_WIN,
+				AIMSG_RED_LOSE, WE_KNIFE));
 }
 
-function Ai(startNode, spriteBase, deathMsg, voln) {
+function Ai(startNode, spriteBase, winMsg, killMsg, voln) {
 	this.attack = false;
 	this.voln = voln;
 	this.orgSpeed = 20+Math.random()*15;
@@ -386,7 +426,8 @@ function Ai(startNode, spriteBase, deathMsg, voln) {
 	this.offsetY = (Math.random() - 0.5)*AI_RAND;
 	this.walker.goRandom();
 	this.spriteBase = spriteBase;
-	this.deathMsg = deathMsg;
+	this.winMsg = winMsg;
+	this.killMsg = killMsg;
 }
 
 Ai.prototype.frame = function(ft) {
@@ -407,9 +448,9 @@ Ai.prototype.frame = function(ft) {
 			Math.floor(this.walker.y + this.offsetY) + yOffset,
 			24.0, ani);
 
-	if (this.caughtPlayer()) {
-		deathQueue(this.deathMsg[0], this.deathMsg[1],
-				3, this.deathMsg[2]);
+	if (this.attack && this.caughtPlayer()) {
+		deathQueue(this.winMsg[0], this.winMsg[1],
+				3, this.winMsg[2]);
 		modeDeath();
 		deathReborn();
 	}
@@ -641,8 +682,8 @@ function nodeInit() {
 
 	alley2.linkTeleport(nord0);
 
-	nodeAiStart0 = alley1;
-	nodePlayerStart = nord1;
+	nodeAiStart0 = nord1;
+	nodePlayerStart = alley1;
 }
 
 function nodeRender() {
@@ -774,10 +815,12 @@ NodeWalker.prototype.goEast		= function() { goConditional(this, this.from.east);
 NodeWalker.prototype.goSouth	= function() { goConditional(this, this.from.south); }
 NodeWalker.prototype.goNorth	= function() { goConditional(this, this.from.north); }
 
-NodeWalker.prototype.goAction = function(action) {
+NodeWalker.prototype.goAction = function(action, forceHidden) {
 	switch (action) {
 		case ACTION_HIDE :
-			this.travel(this.from.hide);
+			this.hidden = forceHidden == true;
+			this.travel(this.from.hide,
+					this.hidden ? 5:1);
 			break;
 
 		case ACTION_TELEPORT :
@@ -786,6 +829,7 @@ NodeWalker.prototype.goAction = function(action) {
 			break;
 
 		default :
+			this.hidden = false || forceHidden == true;
 			this.travel(this.from.rebase);
 			break;
 	}
@@ -863,7 +907,10 @@ function deathInit() {
 	deathProgram.addShaderId('death-vs', ES_VERTEX);
 	deathProgram.bindAttribute(0, 'pos');
 	deathProgram.link();
+
+	deathProgram.use();
 	deathUniTex = deathProgram.getUniform('tex');
+	gl.uniform1i(deathUniTex, 0);
 }
 
 function deathReborn() {
@@ -888,8 +935,8 @@ function deathFrame(ft) {
 		}
 	}
 
-	gl.bindTexture(gl.TEXTURE_2D, deathTexture);
 	deathProgram.use();
+	gl.bindTexture(gl.TEXTURE_2D, deathTexture);
 	gl.enableVertexAttribArray(0);
 	gl.bindBuffer(gl.ARRAY_BUFFER, deathVbo);
 	gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 0, 0);

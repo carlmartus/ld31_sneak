@@ -26,7 +26,10 @@ function deathInit() {
 	deathProgram.addShaderId('death-vs', ES_VERTEX);
 	deathProgram.bindAttribute(0, 'pos');
 	deathProgram.link();
+
+	deathProgram.use();
 	deathUniTex = deathProgram.getUniform('tex');
+	gl.uniform1i(deathUniTex, 0);
 }
 
 function deathReborn() {
@@ -51,8 +54,8 @@ function deathFrame(ft) {
 		}
 	}
 
-	gl.bindTexture(gl.TEXTURE_2D, deathTexture);
 	deathProgram.use();
+	gl.bindTexture(gl.TEXTURE_2D, deathTexture);
 	gl.enableVertexAttribArray(0);
 	gl.bindBuffer(gl.ARRAY_BUFFER, deathVbo);
 	gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 0, 0);

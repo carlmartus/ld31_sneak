@@ -56,6 +56,7 @@ function loaded() {
 	deathQueue(texCsKnife, 'and', 2, null);
 	deathQueue(texCsRedKill, 'assasinate', 4, null);
 	modeDeath();*/
+
 	modePlay();
 }
 
@@ -79,7 +80,7 @@ function main() {
 function mouseEvent(event) {
 	var canvas = document.getElementById('can');
 	var rect = canvas.getBoundingClientRect();
-	avatarMouse(
+	avatarSetMouse(
 			event.clientX - rect.x,
 			event.clientY - rect.y);
 }

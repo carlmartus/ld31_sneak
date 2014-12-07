@@ -1,12 +1,16 @@
 var aiList;
 var aiWave = 0;
 
-var AI_RAND = 32;
-var CAUGHT_RAD = 15;
+var AI_RAND = 16;
+var CAUGHT_RAD = 16;
 
-var AIMSG_RED = [texCsRedWin, 'you got caught'];
+var AIMSG_RED_WIN;
+var AIMSG_RED_LOSE;
 
 function aiInit() {
+	AIMSG_RED_WIN = [texCsRedWin, 'you got caught', null];
+	AIMSG_RED_LOSE = [texCsRedKill, 'take that', null];
+
 	aiWave = 0;
 	aiRespawnWave();
 }
@@ -18,17 +22,39 @@ function aiFrame(ft) {
 }
 
 function aiAttack(x, y, weapon) {
+	var killed = false;
 	for (var i=0; i<aiList.length; i++) {
+
 		if (aiList[i].caught(x, y)) {
+			switch (weapon) {
+				default :
+				case WE_NONE :
+					break;
+
+				case WE_KNIFE :
+					deathQueue(texCsKnife, 'thrust', 1, null);
+					break;
+			}
+
 			if (aiList[i].voln == weapon) {
+				deathQueue(
+						aiList[i].killMsg[0],
+						aiList[i].killMsg[1],
+						1,
+						aiList[i].killMsg[2]);
 				aiList.splice(i, 1);
-				i--;
+				killed = true;
 			} else {
 				aiList[i].attack = true;
 				aiList[i].speed = aiList[i].orgSpeed*3;
 			}
+
+			modeDeath();
+
+			return killed;
 		}
 	}
+	return false;
 }
 
 function aiRespawnWave() {
@@ -40,6 +66,10 @@ function aiRespawnWave() {
 			spawnRed();
 			spawnRed();
 			spawnRed();
+			spawnRed();
+			spawnRed();
+			spawnRed();
+			spawnRed();
 			break;
 	}
 }
@@ -47,10 +77,11 @@ function aiRespawnWave() {
 function spawnRed() {
 	aiList.push(
 			new Ai(
-				nodeAiStart0, SP_AI_RED, AIMSG_RED, WE_KNIFE));
+				nodeAiStart0, SP_AI_RED, AIMSG_RED_WIN,
+				AIMSG_RED_LOSE, WE_KNIFE));
 }
 
-function Ai(startNode, spriteBase, deathMsg, voln) {
+function Ai(startNode, spriteBase, winMsg, killMsg, voln) {
 	this.attack = false;
 	this.voln = voln;
 	this.orgSpeed = 20+Math.random()*15;
@@ -59,7 +90,8 @@ function Ai(startNode, spriteBase, deathMsg, voln) {
 	this.offsetY = (Math.random() - 0.5)*AI_RAND;
 	this.walker.goRandom();
 	this.spriteBase = spriteBase;
-	this.deathMsg = deathMsg;
+	this.winMsg = winMsg;
+	this.killMsg = killMsg;
 }
 
 Ai.prototype.frame = function(ft) {
@@ -80,9 +112,9 @@ Ai.prototype.frame = function(ft) {
 			Math.floor(this.walker.y + this.offsetY) + yOffset,
 			24.0, ani);
 
-	if (this.caughtPlayer()) {
-		deathQueue(this.deathMsg[0], this.deathMsg[1],
-				3, this.deathMsg[2]);
+	if (this.attack && this.caughtPlayer()) {
+		deathQueue(this.winMsg[0], this.winMsg[1],
+				3, this.winMsg[2]);
 		modeDeath();
 		deathReborn();
 	}
