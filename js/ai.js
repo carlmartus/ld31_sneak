@@ -1,7 +1,7 @@
 var aiList;
 var aiWave = 0;
 
-var AI_WAVES = 4;
+var AI_WAVES = 3;
 
 var AI_RAND = 16;
 var CAUGHT_RAD = 16;

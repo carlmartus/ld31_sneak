@@ -81,7 +81,7 @@ function loaded() {
 	esNextFrame(frameExec);
 
 	deathQueue(texCsRedWin, 'sneak', 2, null);
-	deathQueue(texCsKnife, 'and', 2, null);
+	deathQueue(texCsKnife, 'locate weapons', 2, null);
 	deathQueue(texCsRedKill, 'assasinate', 4, null);
 	modeDeath();
 }
