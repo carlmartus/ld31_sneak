@@ -382,7 +382,6 @@ function spawnRed() {
 }
 
 function aiAttack(x, y, weapon) {
-	var killed = false;
 	for (var i=0; i<aiList.length; i++) {
 
 		if (aiList[i].caught(x, y)) {
@@ -403,15 +402,13 @@ function aiAttack(x, y, weapon) {
 						1,
 						aiList[i].killMsg[2]);
 				aiList.splice(i, 1);
-				killed = true;
+
+				modeDeath();
+				return true;
 			} else {
 				aiList[i].attack = true;
 				aiList[i].speed = aiList[i].orgSpeed*3;
 			}
-
-			modeDeath();
-
-			return killed;
 		}
 	}
 	return false;
