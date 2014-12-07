@@ -39,7 +39,7 @@ function deathReborn() {
 }
 
 function deathQueue(texture, text, duration, sound) {
-	deathQ.push([texture, text, duration]);
+	deathQ.push([texture, text, duration, sound]);
 }
 
 function deathFrame(ft) {
@@ -55,6 +55,10 @@ function deathFrame(ft) {
 			deathText = line[1];
 			deathDuration = line[2];
 			var sound = line[3];
+
+			if (sound) {
+				sound.play();
+			}
 		}
 	}
 

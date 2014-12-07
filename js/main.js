@@ -24,6 +24,13 @@ var texCsMudWin;
 var texCsMudFail;
 var texCsMudKill;
 
+var sndLaugh;
+var sndSmack;
+var sndWhat;
+var sndAttack0;
+var sndAttack1;
+var sndPou;
+
 var frameFunc;
 var blockMouse;
 
@@ -99,6 +106,14 @@ function main() {
 	imgCsMudWin = lod.loadImage('cs_mudwin.png');
 	imgCsMudFail = lod.loadImage('cs_mudfail.png');
 	imgCsMudKill = lod.loadImage('cs_mudkill.png');
+
+	sndLaugh = lod.loadAudio('laugh.ogg');
+	sndSmack = lod.loadAudio('smack.ogg');
+	sndWhat = lod.loadAudio('what.ogg');
+	sndAttack0 = lod.loadAudio('attack0.ogg');
+	sndAttack1 = lod.loadAudio('attack1.ogg');
+	sndPou = lod.loadAudio('pou.ogg');
+
 	lod.download(loaded);
 }
 

@@ -95,6 +95,13 @@ var texCsMudWin;
 var texCsMudFail;
 var texCsMudKill;
 
+var sndLaugh;
+var sndSmack;
+var sndWhat;
+var sndAttack0;
+var sndAttack1;
+var sndPou;
+
 var frameFunc;
 var blockMouse;
 
@@ -170,6 +177,14 @@ function main() {
 	imgCsMudWin = lod.loadImage('cs_mudwin.png');
 	imgCsMudFail = lod.loadImage('cs_mudfail.png');
 	imgCsMudKill = lod.loadImage('cs_mudkill.png');
+
+	sndLaugh = lod.loadAudio('laugh.ogg');
+	sndSmack = lod.loadAudio('smack.ogg');
+	sndWhat = lod.loadAudio('what.ogg');
+	sndAttack0 = lod.loadAudio('attack0.ogg');
+	sndAttack1 = lod.loadAudio('attack1.ogg');
+	sndPou = lod.loadAudio('pou.ogg');
+
 	lod.download(loaded);
 }
 
@@ -449,13 +464,13 @@ var AIMSG_MUD_FAIL;
 var AIMSG_MUD_LOSE;
 
 function aiInit() {
-	AIMSG_RED_WIN = [texCsRedWin, 'you got caught', null];
-	AIMSG_RED_FAIL = [texCsRedFail, 'he he he', null];
-	AIMSG_RED_LOSE = [texCsRedKill, 'take that', null];
+	AIMSG_RED_WIN = [texCsRedWin, 'you got caught', sndLaugh];
+	AIMSG_RED_FAIL = [texCsRedFail, 'he he he', sndWhat];
+	AIMSG_RED_LOSE = [texCsRedKill, 'take that', sndPou];
 
-	AIMSG_MUD_WIN = [texCsMudWin, 'mud got you', null];
-	AIMSG_MUD_FAIL = [texCsMudFail, 'ho ho ho', null];
-	AIMSG_MUD_LOSE = [texCsMudKill, 'splat', null];
+	AIMSG_MUD_WIN = [texCsMudWin, 'mud got you', sndLaugh];
+	AIMSG_MUD_FAIL = [texCsMudFail, 'ha ha ha', sndWhat];
+	AIMSG_MUD_LOSE = [texCsMudKill, 'splat', sndPou];
 
 	aiWave = 0;
 	aiRespawnWave();
@@ -529,11 +544,11 @@ function aiAttack(x, y, weapon) {
 					break;
 
 				case WE_KNIFE :
-					deathQueue(texCsKnife, 'thrust', 1, null);
+					deathQueue(texCsKnife, 'thrust', 2, sndAttack0);
 					break;
 
 				case WE_PIPE :
-					deathQueue(texCsPipe, 'swing', 1, null);
+					deathQueue(texCsPipe, 'swing', 2, sndAttack1);
 					break;
 			}
 
@@ -632,7 +647,7 @@ Ai.prototype.killPlayer = function() {
 
 Ai.prototype.planTravel = function() {
 	if (this.isSeePlayer()) {
-		this.walker.speed = this.orgSpeed*2;
+		this.walker.speed = this.orgSpeed*1.4;
 		this.attack = true;
 
 		var playerDest = avatarNodeAt;
@@ -1136,7 +1151,7 @@ function deathReborn() {
 }
 
 function deathQueue(texture, text, duration, sound) {
-	deathQ.push([texture, text, duration]);
+	deathQ.push([texture, text, duration, sound]);
 }
 
 function deathFrame(ft) {
@@ -1152,6 +1167,10 @@ function deathFrame(ft) {
 			deathText = line[1];
 			deathDuration = line[2];
 			var sound = line[3];
+
+			if (sound) {
+				sound.play();
+			}
 		}
 	}
 
