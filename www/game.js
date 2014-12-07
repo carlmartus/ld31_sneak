@@ -95,10 +95,12 @@ function loaded() {
 
 	esNextFrame(frameExec);
 
+	/*
 	deathQueue(texCsRedWin, 'sneak', 2, null);
 	deathQueue(texCsKnife, 'and', 2, null);
 	deathQueue(texCsRedKill, 'assasinate', 4, null);
-	modeDeath();
+	modeDeath();*/
+	modePlay();
 }
 
 function main() {
@@ -162,6 +164,10 @@ var AV_WALKING = 2;
 var WE_NONE = 0;
 var WE_KNIFE = 1;
 
+var WE_TEXT = [
+	'no weapon',
+	'knife'];
+
 function avatarInit(start) {
 	avatarWalker = new NodeWalker(nodePlayerStart, 35);
 	avatarLastWalkerState = -1;
@@ -175,19 +181,39 @@ function avatarFrame(ft) {
 		avatarUpdateState();
 	}
 
-	if (avatarState == AV_WALKING) {
-		spriteAdd(avatarWalker.x, avatarWalker.y,
-				32, spriteFrame(SP_PLAYER, avatarWalker));
-	} else if (avatarState == AV_WAITING) {
-		spriteAdd(avatarWalker.x, avatarWalker.y,
-				32, SP_PLAYER_IDLE);
+	if (!avatarWalker.hidden) {
+		if (avatarAction) {
+			spriteAdd(avatarActionX, avatarActionY, 32, SP_TABLET);
+			spriteAdd(avatarActionX, avatarActionY, 32,
+					avatarActionSprite);
+
+			switch (avatarAction) {
+				case ACTION_HIDE_ATTACK :
+					break;
+
+				default :
+				case ACTION_TELEPORT :
+					spriteAdd(avatarWalker.x, avatarWalker.y,
+							32, SP_PLAYER_SNEAK);
+					break;
+
+				case ACTION_PICK_KNIFE :
+					spriteAdd(avatarWalker.x, avatarWalker.y,
+							32, SP_PLAYER_IDLE);
+					break;
+			}
+		} else {
+			if (avatarState == AV_WALKING) {
+				spriteAdd(avatarWalker.x, avatarWalker.y,
+						32, spriteFrame(SP_PLAYER, avatarWalker));
+			} else if (avatarState == AV_WAITING) {
+				spriteAdd(avatarWalker.x, avatarWalker.y,
+						32, SP_PLAYER_IDLE);
+			}
+		}
 	}
 
-	if (avatarAction) {
-		spriteAdd(avatarActionX, avatarActionY, 32, SP_TABLET);
-		spriteAdd(avatarActionX, avatarActionY, 32,
-				avatarActionSprite);
-	}
+	spriteAddText(12, 500, 16, WE_TEXT[avatarWeapon]);
 }
 
 function avatarMouse(x, y) {
@@ -195,7 +221,21 @@ function avatarMouse(x, y) {
 		avatarQueueMouse = [ x, y ];
 	} else {
 		if (avatarAction != ACTION_NONE && avatarOnAction(x, y)) {
-			avatarWalker.goAction(avatarAction);
+
+			switch (avatarAction) {
+				case ACTION_PICK_KNIFE :
+					avatarWeapon = WE_KNIFE;
+					break;
+
+				case ACTION_HIDE_ATTACK :
+					var target = avatarWalker.from.rebase;
+					aiAttack(target.x, target.y, avatarWeapon);
+					avatarWalker.goAction(avatarAction);
+					break;
+
+				default :
+					avatarWalker.goAction(avatarAction);
+			}
 		} else {
 			avatarDirMove(x, y);
 		}
@@ -215,12 +255,21 @@ function avatarUpdateActions(action) {
 		case ACTION_HIDE_ATTACK :
 			avatarActionSprite = SP_ICON_HIDE_ATTACK;
 			break;
+
+		case ACTION_TELEPORT :
+			avatarActionSprite = SP_ICON_TELEPORT;
+			break;
+
+		case ACTION_PICK_KNIFE :
+			avatarActionSprite = SP_ICON_KNIFE;
+			break;
 	}
 }
 
 function avatarUpdateState() {
 	switch (avatarWalker.state) {
 		case NW_IDLE :
+			avatarWalker.from.occupied = true;
 			avatarState = AV_WAITING;
 			avatarNodeAt = avatarWalker.from;
 			avatarNodeTravelA = avatarNodeTravelB = null;
@@ -235,6 +284,7 @@ function avatarUpdateState() {
 			break;
 
 		case NW_WALKING :
+			avatarWalker.from.occupied = false;
 			avatarState = AV_WALKING;
 			avatarNodeAt = null;
 			avatarNodeTravelA = avatarWalker.from;
@@ -279,7 +329,9 @@ var aiList;
 var aiWave = 0;
 
 var AI_RAND = 32;
-var CAUGHT_RAD = 10;
+var CAUGHT_RAD = 15;
+
+var AIMSG_RED = [texCsRedWin, 'you got caught'];
 
 function aiInit() {
 	aiWave = 0;
@@ -292,22 +344,42 @@ function aiFrame(ft) {
 	}
 }
 
+function aiAttack(x, y, weapon) {
+	for (var i=0; i<aiList.length; i++) {
+		if (aiList[i].caught(x, y)) {
+			if (aiList[i].voln == weapon) {
+				aiList.splice(i, 1);
+				i--;
+			} else {
+				aiList[i].attack = true;
+				aiList[i].speed = aiList[i].orgSpeed*3;
+			}
+		}
+	}
+}
+
 function aiRespawnWave() {
 	aiList = [];
-	var deathMsg = [texCsRedWin, 'you got caught'];
 
 	switch (aiWave) {
 		case 0 :
-			aiList.push(new Ai(nodeAiStart0, SP_AI_RED, deathMsg));
-			aiList.push(new Ai(nodeAiStart0, SP_AI_RED, deathMsg));
-			aiList.push(new Ai(nodeAiStart0, SP_AI_RED, deathMsg));
-			aiList.push(new Ai(nodeAiStart0, SP_AI_RED, deathMsg));
+			spawnRed();
+			spawnRed();
+			spawnRed();
+			spawnRed();
 			break;
 	}
 }
 
-function Ai(startNode, spriteBase, deathMsg) {
+function spawnRed() {
+	aiList.push(
+			new Ai(
+				nodeAiStart0, SP_AI_RED, AIMSG_RED, WE_KNIFE));
+}
+
+function Ai(startNode, spriteBase, deathMsg, voln) {
 	this.attack = false;
+	this.voln = voln;
 	this.orgSpeed = 20+Math.random()*15;
 	this.walker = new NodeWalker(startNode, this.orgSpeed);
 	this.offsetX = (Math.random() - 0.5)*AI_RAND;
@@ -354,15 +426,21 @@ Ai.prototype.planTravel = function() {
 		this.walker.travel(playerDest);
 	} else {
 		this.walker.speed = this.orgSpeed;
+		this.attack = false;
 		this.walker.goRandom();
 	}
 
 }
 
-Ai.prototype.caughtPlayer = function() {
-	var abx = Math.abs(this.walker.x - avatarWalker.x);
-	var aby = Math.abs(this.walker.y - avatarWalker.y);
+Ai.prototype.caught = function(x, y) {
+	var abx = Math.abs(this.walker.x - x);
+	var aby = Math.abs(this.walker.y - y);
 	return abx < CAUGHT_RAD && aby < CAUGHT_RAD;
+}
+
+Ai.prototype.caughtPlayer = function() {
+	if (avatarWalker.hidden) return false;
+	return this.caught(avatarWalker.x, avatarWalker.y);
 }
 
 Ai.prototype.isSeePlayer = function() {
@@ -400,9 +478,12 @@ var SP_CROSS = [1, 0];
 var SP_BOX_FREE = [1, 0];
 var SP_BOX_TAKEN = [2, 0];
 var SP_PLAYER_IDLE = [8, 1];
+var SP_PLAYER_SNEAK = [9, 1];
 var SP_TABLET = [3, 0];
 var SP_ICON_HIDE = [4, 0];
 var SP_ICON_HIDE_ATTACK = [5, 0];
+var SP_ICON_TELEPORT = [6, 0];
+var SP_ICON_KNIFE = [7, 0];
 
 var SP_PLAYER = [0, 1];
 var SP_AI_RED = [0, 2];
@@ -510,6 +591,8 @@ var NW_WALKING = 1;
 var ACTION_NONE = 0;
 var ACTION_HIDE = 1;
 var ACTION_HIDE_ATTACK = 2;
+var ACTION_TELEPORT = 3;
+var ACTION_PICK_KNIFE = 4;
 
 var nodeAiStart0;
 var nodePlayerStart;
@@ -525,12 +608,14 @@ function nodeInit() {
 	var nordBox1 = packNode(153, 31, ACTION_HIDE_ATTACK);
 
 	var alley0 = packNode(293, 148);
-	var alley1 = packNode(346, 150);
-	var alley2 = packNode(293, 86);
+	var alley1 = packNode(346, 150, ACTION_PICK_KNIFE);
+	var alley2 = packNode(293, 86, ACTION_TELEPORT);
 
 	var skurk0 = packNode(350, 207);
 	var skurk1 = packNode(465, 210);
 	var skurk2 = packNode(347, 324);
+	var skurkBox0 = packNode(408, 330, ACTION_HIDE);
+	var skurkBox1 = packNode(404, 314, ACTION_HIDE_ATTACK);
 	var skurk3 = packNode(462, 331);
 
 	nord0.linkWest(nordBox0);
@@ -549,11 +634,15 @@ function nodeInit() {
 
 	skurk0.linkWest(skurk1);
 	skurk0.linkSouth(skurk2);
-	skurk2.linkWest(skurk3);
+	skurk2.linkWest(skurkBox0);
+	skurkBox0.linkHide(skurkBox1);
+	skurkBox0.linkWest(skurk3);
 	skurk1.linkSouth(skurk3);
 
-	nodeAiStart0 = skurk0;
-	nodePlayerStart = nord0;
+	alley2.linkTeleport(nord0);
+
+	nodeAiStart0 = alley1;
+	nodePlayerStart = nord1;
 }
 
 function nodeRender() {
@@ -579,6 +668,8 @@ function NodeWalker(start, speed) {
 	this.travelDist = 0.0;
 	this.travelDirX = 0.0;
 	this.travelDirY = 0.0;
+	this.travelSpeed = 0.0;
+	this.hidden = false;
 	this.animationBase = 0;
 	this.animation = 0;
 }
@@ -587,9 +678,9 @@ NodeWalker.prototype.frame = function(ft) {
 	switch (this.state) {
 
 		case NW_WALKING :
-			this.travelDist -= ft*this.speed;
-			this.x += this.travelDirX*ft*this.speed;
-			this.y += this.travelDirY*ft*this.speed;
+			this.travelDist -= ft*this.travelSpeed;
+			this.x += this.travelDirX*ft*this.travelSpeed;
+			this.y += this.travelDirY*ft*this.travelSpeed;
 			this.animation = ((Math.floor(this.travelDist) >> 4) & 1);
 
 			if (this.travelDist <= 0.0) {
@@ -599,12 +690,13 @@ NodeWalker.prototype.frame = function(ft) {
 				this.travelDist = 0.0;
 				this.from = this.dest;
 				this.dest = null;
+				this.hidden = false;
 			}
 			break;
 	}
 }
 
-NodeWalker.prototype.travel = function(target) {
+NodeWalker.prototype.travel = function(target, optSpeed) {
 
 	var dx = this.from.x - target.x;
 	var dy = this.from.y - target.y;
@@ -634,6 +726,11 @@ NodeWalker.prototype.travel = function(target) {
 	this.travelDist = Math.sqrt(dx*dx + dy*dy);
 	this.travelDirX = dx / this.travelDist;
 	this.travelDirY = dy / this.travelDist;
+	this.travelSpeed = this.speed;
+
+	if (optSpeed > 0) {
+		this.travelSpeed *= optSpeed;
+	}
 }
 
 function shouldGo(walker, dir, list) {
@@ -683,6 +780,11 @@ NodeWalker.prototype.goAction = function(action) {
 			this.travel(this.from.hide);
 			break;
 
+		case ACTION_TELEPORT :
+			this.hidden = true;
+			this.travel(this.from.teleport, 5);
+			break;
+
 		default :
 			this.travel(this.from.rebase);
 			break;
@@ -695,7 +797,7 @@ function Node(x, y, action) {
 	this.action = action;
 	this.occupied = false;
 	this.east = this.west = this.north = this.south = null;
-	this.rebase = this.hide = null;
+	this.rebase = this.hide = this.teleport = null;
 }
 
 Node.prototype.renderSprite = function(id) {
@@ -710,7 +812,7 @@ Node.prototype.render = function() {
 			break;
 
 		default :
-			this.renderSprite(SP_NODE);
+			//this.renderSprite(SP_NODE);
 	}
 }
 
@@ -727,6 +829,10 @@ Node.prototype.linkSouth = function(target) {
 Node.prototype.linkHide = function(target) {
 	this.hide = target;
 	target.rebase = this;
+}
+
+Node.prototype.linkTeleport = function(target) {
+	this.teleport = target;
 }
 
 var deathQ;

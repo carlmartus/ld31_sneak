@@ -19,6 +19,10 @@ var AV_WALKING = 2;
 var WE_NONE = 0;
 var WE_KNIFE = 1;
 
+var WE_TEXT = [
+	'no weapon',
+	'knife'];
+
 function avatarInit(start) {
 	avatarWalker = new NodeWalker(nodePlayerStart, 35);
 	avatarLastWalkerState = -1;
@@ -32,19 +36,39 @@ function avatarFrame(ft) {
 		avatarUpdateState();
 	}
 
-	if (avatarState == AV_WALKING) {
-		spriteAdd(avatarWalker.x, avatarWalker.y,
-				32, spriteFrame(SP_PLAYER, avatarWalker));
-	} else if (avatarState == AV_WAITING) {
-		spriteAdd(avatarWalker.x, avatarWalker.y,
-				32, SP_PLAYER_IDLE);
+	if (!avatarWalker.hidden) {
+		if (avatarAction) {
+			spriteAdd(avatarActionX, avatarActionY, 32, SP_TABLET);
+			spriteAdd(avatarActionX, avatarActionY, 32,
+					avatarActionSprite);
+
+			switch (avatarAction) {
+				case ACTION_HIDE_ATTACK :
+					break;
+
+				default :
+				case ACTION_TELEPORT :
+					spriteAdd(avatarWalker.x, avatarWalker.y,
+							32, SP_PLAYER_SNEAK);
+					break;
+
+				case ACTION_PICK_KNIFE :
+					spriteAdd(avatarWalker.x, avatarWalker.y,
+							32, SP_PLAYER_IDLE);
+					break;
+			}
+		} else {
+			if (avatarState == AV_WALKING) {
+				spriteAdd(avatarWalker.x, avatarWalker.y,
+						32, spriteFrame(SP_PLAYER, avatarWalker));
+			} else if (avatarState == AV_WAITING) {
+				spriteAdd(avatarWalker.x, avatarWalker.y,
+						32, SP_PLAYER_IDLE);
+			}
+		}
 	}
 
-	if (avatarAction) {
-		spriteAdd(avatarActionX, avatarActionY, 32, SP_TABLET);
-		spriteAdd(avatarActionX, avatarActionY, 32,
-				avatarActionSprite);
-	}
+	spriteAddText(12, 500, 16, WE_TEXT[avatarWeapon]);
 }
 
 function avatarMouse(x, y) {
@@ -52,7 +76,21 @@ function avatarMouse(x, y) {
 		avatarQueueMouse = [ x, y ];
 	} else {
 		if (avatarAction != ACTION_NONE && avatarOnAction(x, y)) {
-			avatarWalker.goAction(avatarAction);
+
+			switch (avatarAction) {
+				case ACTION_PICK_KNIFE :
+					avatarWeapon = WE_KNIFE;
+					break;
+
+				case ACTION_HIDE_ATTACK :
+					var target = avatarWalker.from.rebase;
+					aiAttack(target.x, target.y, avatarWeapon);
+					avatarWalker.goAction(avatarAction);
+					break;
+
+				default :
+					avatarWalker.goAction(avatarAction);
+			}
 		} else {
 			avatarDirMove(x, y);
 		}
@@ -72,12 +110,21 @@ function avatarUpdateActions(action) {
 		case ACTION_HIDE_ATTACK :
 			avatarActionSprite = SP_ICON_HIDE_ATTACK;
 			break;
+
+		case ACTION_TELEPORT :
+			avatarActionSprite = SP_ICON_TELEPORT;
+			break;
+
+		case ACTION_PICK_KNIFE :
+			avatarActionSprite = SP_ICON_KNIFE;
+			break;
 	}
 }
 
 function avatarUpdateState() {
 	switch (avatarWalker.state) {
 		case NW_IDLE :
+			avatarWalker.from.occupied = true;
 			avatarState = AV_WAITING;
 			avatarNodeAt = avatarWalker.from;
 			avatarNodeTravelA = avatarNodeTravelB = null;
@@ -92,6 +139,7 @@ function avatarUpdateState() {
 			break;
 
 		case NW_WALKING :
+			avatarWalker.from.occupied = false;
 			avatarState = AV_WALKING;
 			avatarNodeAt = null;
 			avatarNodeTravelA = avatarWalker.from;

@@ -2,7 +2,9 @@ var aiList;
 var aiWave = 0;
 
 var AI_RAND = 32;
-var CAUGHT_RAD = 10;
+var CAUGHT_RAD = 15;
+
+var AIMSG_RED = [texCsRedWin, 'you got caught'];
 
 function aiInit() {
 	aiWave = 0;
@@ -15,22 +17,42 @@ function aiFrame(ft) {
 	}
 }
 
+function aiAttack(x, y, weapon) {
+	for (var i=0; i<aiList.length; i++) {
+		if (aiList[i].caught(x, y)) {
+			if (aiList[i].voln == weapon) {
+				aiList.splice(i, 1);
+				i--;
+			} else {
+				aiList[i].attack = true;
+				aiList[i].speed = aiList[i].orgSpeed*3;
+			}
+		}
+	}
+}
+
 function aiRespawnWave() {
 	aiList = [];
-	var deathMsg = [texCsRedWin, 'you got caught'];
 
 	switch (aiWave) {
 		case 0 :
-			aiList.push(new Ai(nodeAiStart0, SP_AI_RED, deathMsg));
-			aiList.push(new Ai(nodeAiStart0, SP_AI_RED, deathMsg));
-			aiList.push(new Ai(nodeAiStart0, SP_AI_RED, deathMsg));
-			aiList.push(new Ai(nodeAiStart0, SP_AI_RED, deathMsg));
+			spawnRed();
+			spawnRed();
+			spawnRed();
+			spawnRed();
 			break;
 	}
 }
 
-function Ai(startNode, spriteBase, deathMsg) {
+function spawnRed() {
+	aiList.push(
+			new Ai(
+				nodeAiStart0, SP_AI_RED, AIMSG_RED, WE_KNIFE));
+}
+
+function Ai(startNode, spriteBase, deathMsg, voln) {
 	this.attack = false;
+	this.voln = voln;
 	this.orgSpeed = 20+Math.random()*15;
 	this.walker = new NodeWalker(startNode, this.orgSpeed);
 	this.offsetX = (Math.random() - 0.5)*AI_RAND;
@@ -77,15 +99,21 @@ Ai.prototype.planTravel = function() {
 		this.walker.travel(playerDest);
 	} else {
 		this.walker.speed = this.orgSpeed;
+		this.attack = false;
 		this.walker.goRandom();
 	}
 
 }
 
-Ai.prototype.caughtPlayer = function() {
-	var abx = Math.abs(this.walker.x - avatarWalker.x);
-	var aby = Math.abs(this.walker.y - avatarWalker.y);
+Ai.prototype.caught = function(x, y) {
+	var abx = Math.abs(this.walker.x - x);
+	var aby = Math.abs(this.walker.y - y);
 	return abx < CAUGHT_RAD && aby < CAUGHT_RAD;
+}
+
+Ai.prototype.caughtPlayer = function() {
+	if (avatarWalker.hidden) return false;
+	return this.caught(avatarWalker.x, avatarWalker.y);
 }
 
 Ai.prototype.isSeePlayer = function() {

@@ -6,6 +6,8 @@ var NW_WALKING = 1;
 var ACTION_NONE = 0;
 var ACTION_HIDE = 1;
 var ACTION_HIDE_ATTACK = 2;
+var ACTION_TELEPORT = 3;
+var ACTION_PICK_KNIFE = 4;
 
 var nodeAiStart0;
 var nodePlayerStart;
@@ -21,12 +23,14 @@ function nodeInit() {
 	var nordBox1 = packNode(153, 31, ACTION_HIDE_ATTACK);
 
 	var alley0 = packNode(293, 148);
-	var alley1 = packNode(346, 150);
-	var alley2 = packNode(293, 86);
+	var alley1 = packNode(346, 150, ACTION_PICK_KNIFE);
+	var alley2 = packNode(293, 86, ACTION_TELEPORT);
 
 	var skurk0 = packNode(350, 207);
 	var skurk1 = packNode(465, 210);
 	var skurk2 = packNode(347, 324);
+	var skurkBox0 = packNode(408, 330, ACTION_HIDE);
+	var skurkBox1 = packNode(404, 314, ACTION_HIDE_ATTACK);
 	var skurk3 = packNode(462, 331);
 
 	nord0.linkWest(nordBox0);
@@ -45,11 +49,15 @@ function nodeInit() {
 
 	skurk0.linkWest(skurk1);
 	skurk0.linkSouth(skurk2);
-	skurk2.linkWest(skurk3);
+	skurk2.linkWest(skurkBox0);
+	skurkBox0.linkHide(skurkBox1);
+	skurkBox0.linkWest(skurk3);
 	skurk1.linkSouth(skurk3);
 
-	nodeAiStart0 = skurk0;
-	nodePlayerStart = nord0;
+	alley2.linkTeleport(nord0);
+
+	nodeAiStart0 = alley1;
+	nodePlayerStart = nord1;
 }
 
 function nodeRender() {
@@ -75,6 +83,8 @@ function NodeWalker(start, speed) {
 	this.travelDist = 0.0;
 	this.travelDirX = 0.0;
 	this.travelDirY = 0.0;
+	this.travelSpeed = 0.0;
+	this.hidden = false;
 	this.animationBase = 0;
 	this.animation = 0;
 }
@@ -83,9 +93,9 @@ NodeWalker.prototype.frame = function(ft) {
 	switch (this.state) {
 
 		case NW_WALKING :
-			this.travelDist -= ft*this.speed;
-			this.x += this.travelDirX*ft*this.speed;
-			this.y += this.travelDirY*ft*this.speed;
+			this.travelDist -= ft*this.travelSpeed;
+			this.x += this.travelDirX*ft*this.travelSpeed;
+			this.y += this.travelDirY*ft*this.travelSpeed;
 			this.animation = ((Math.floor(this.travelDist) >> 4) & 1);
 
 			if (this.travelDist <= 0.0) {
@@ -95,12 +105,13 @@ NodeWalker.prototype.frame = function(ft) {
 				this.travelDist = 0.0;
 				this.from = this.dest;
 				this.dest = null;
+				this.hidden = false;
 			}
 			break;
 	}
 }
 
-NodeWalker.prototype.travel = function(target) {
+NodeWalker.prototype.travel = function(target, optSpeed) {
 
 	var dx = this.from.x - target.x;
 	var dy = this.from.y - target.y;
@@ -130,6 +141,11 @@ NodeWalker.prototype.travel = function(target) {
 	this.travelDist = Math.sqrt(dx*dx + dy*dy);
 	this.travelDirX = dx / this.travelDist;
 	this.travelDirY = dy / this.travelDist;
+	this.travelSpeed = this.speed;
+
+	if (optSpeed > 0) {
+		this.travelSpeed *= optSpeed;
+	}
 }
 
 function shouldGo(walker, dir, list) {
@@ -179,6 +195,11 @@ NodeWalker.prototype.goAction = function(action) {
 			this.travel(this.from.hide);
 			break;
 
+		case ACTION_TELEPORT :
+			this.hidden = true;
+			this.travel(this.from.teleport, 5);
+			break;
+
 		default :
 			this.travel(this.from.rebase);
 			break;
@@ -191,7 +212,7 @@ function Node(x, y, action) {
 	this.action = action;
 	this.occupied = false;
 	this.east = this.west = this.north = this.south = null;
-	this.rebase = this.hide = null;
+	this.rebase = this.hide = this.teleport = null;
 }
 
 Node.prototype.renderSprite = function(id) {
@@ -206,7 +227,7 @@ Node.prototype.render = function() {
 			break;
 
 		default :
-			this.renderSprite(SP_NODE);
+			//this.renderSprite(SP_NODE);
 	}
 }
 
@@ -223,5 +244,9 @@ Node.prototype.linkSouth = function(target) {
 Node.prototype.linkHide = function(target) {
 	this.hide = target;
 	target.rebase = this;
+}
+
+Node.prototype.linkTeleport = function(target) {
+	this.teleport = target;
 }
 
