@@ -21,6 +21,25 @@ function aiFrame(ft) {
 	}
 }
 
+function aiRespawnWave() {
+	aiList = [];
+
+	switch (aiWave) {
+		case 0 :
+			spawnRed();
+			spawnRed();
+			spawnRed();
+			break;
+	}
+}
+
+function spawnRed() {
+	aiList.push(
+			new Ai(
+				nodeAiStart0, SP_AI_RED, AIMSG_RED_WIN,
+				AIMSG_RED_LOSE, WE_KNIFE));
+}
+
 function aiAttack(x, y, weapon) {
 	var killed = false;
 	for (var i=0; i<aiList.length; i++) {
@@ -55,30 +74,6 @@ function aiAttack(x, y, weapon) {
 		}
 	}
 	return false;
-}
-
-function aiRespawnWave() {
-	aiList = [];
-
-	switch (aiWave) {
-		case 0 :
-			spawnRed();
-			spawnRed();
-			spawnRed();
-			spawnRed();
-			spawnRed();
-			spawnRed();
-			spawnRed();
-			spawnRed();
-			break;
-	}
-}
-
-function spawnRed() {
-	aiList.push(
-			new Ai(
-				nodeAiStart0, SP_AI_RED, AIMSG_RED_WIN,
-				AIMSG_RED_LOSE, WE_KNIFE));
 }
 
 function Ai(startNode, spriteBase, winMsg, killMsg, voln) {

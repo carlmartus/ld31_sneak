@@ -13,6 +13,7 @@ var texCsRedWin;
 var texCsRedKill;
 
 var frameFunc;
+var blockMouse;
 
 function frameExec(ft) {
 	if (ft > 0.3) return;
@@ -78,6 +79,8 @@ function main() {
 }
 
 function mouseEvent(event) {
+	if (blockMouse) return;
+
 	var canvas = document.getElementById('can');
 	var rect = canvas.getBoundingClientRect();
 	avatarSetMouse(
@@ -86,10 +89,12 @@ function mouseEvent(event) {
 }
 
 function modePlay() {
+	blockMouse = false;
 	frameFunc = playFrame;
 }
 
 function modeDeath() {
+	blockMouse = true;
 	frameFunc = deathFrame;
 }
 

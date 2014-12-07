@@ -15,7 +15,7 @@ var nodePlayerStart;
 function nodeInit() {
 	nodeList = [];
 
-	var nord0 = packNode(67, 49);
+	var nord0 = packNode(67, 49, ACTION_TELEPORT);
 	var nord1 = packNode(215, 53);
 	var nord2 = packNode(62, 161);
 	var nord3 = packNode(218, 153);
@@ -55,9 +55,10 @@ function nodeInit() {
 	skurk1.linkSouth(skurk3);
 
 	alley2.linkTeleport(nord0);
+	nord0.linkTeleport(alley2);
 
 	nodeAiStart0 = nord1;
-	nodePlayerStart = alley1;
+	nodePlayerStart = skurk1;
 }
 
 function nodeRender() {

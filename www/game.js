@@ -57,6 +57,7 @@ var texCsRedWin;
 var texCsRedKill;
 
 var frameFunc;
+var blockMouse;
 
 function frameExec(ft) {
 	if (ft > 0.3) return;
@@ -122,6 +123,8 @@ function main() {
 }
 
 function mouseEvent(event) {
+	if (blockMouse) return;
+
 	var canvas = document.getElementById('can');
 	var rect = canvas.getBoundingClientRect();
 	avatarSetMouse(
@@ -130,10 +133,12 @@ function mouseEvent(event) {
 }
 
 function modePlay() {
+	blockMouse = false;
 	frameFunc = playFrame;
 }
 
 function modeDeath() {
+	blockMouse = true;
 	frameFunc = deathFrame;
 }
 
@@ -357,6 +362,25 @@ function aiFrame(ft) {
 	}
 }
 
+function aiRespawnWave() {
+	aiList = [];
+
+	switch (aiWave) {
+		case 0 :
+			spawnRed();
+			spawnRed();
+			spawnRed();
+			break;
+	}
+}
+
+function spawnRed() {
+	aiList.push(
+			new Ai(
+				nodeAiStart0, SP_AI_RED, AIMSG_RED_WIN,
+				AIMSG_RED_LOSE, WE_KNIFE));
+}
+
 function aiAttack(x, y, weapon) {
 	var killed = false;
 	for (var i=0; i<aiList.length; i++) {
@@ -391,30 +415,6 @@ function aiAttack(x, y, weapon) {
 		}
 	}
 	return false;
-}
-
-function aiRespawnWave() {
-	aiList = [];
-
-	switch (aiWave) {
-		case 0 :
-			spawnRed();
-			spawnRed();
-			spawnRed();
-			spawnRed();
-			spawnRed();
-			spawnRed();
-			spawnRed();
-			spawnRed();
-			break;
-	}
-}
-
-function spawnRed() {
-	aiList.push(
-			new Ai(
-				nodeAiStart0, SP_AI_RED, AIMSG_RED_WIN,
-				AIMSG_RED_LOSE, WE_KNIFE));
 }
 
 function Ai(startNode, spriteBase, winMsg, killMsg, voln) {
@@ -641,7 +641,7 @@ var nodePlayerStart;
 function nodeInit() {
 	nodeList = [];
 
-	var nord0 = packNode(67, 49);
+	var nord0 = packNode(67, 49, ACTION_TELEPORT);
 	var nord1 = packNode(215, 53);
 	var nord2 = packNode(62, 161);
 	var nord3 = packNode(218, 153);
@@ -681,9 +681,10 @@ function nodeInit() {
 	skurk1.linkSouth(skurk3);
 
 	alley2.linkTeleport(nord0);
+	nord0.linkTeleport(alley2);
 
 	nodeAiStart0 = nord1;
-	nodePlayerStart = alley1;
+	nodePlayerStart = skurk1;
 }
 
 function nodeRender() {
