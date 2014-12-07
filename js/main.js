@@ -7,6 +7,9 @@ var imgCsPipe;
 var imgCsRedWin;
 var imgCsRedFail;
 var imgCsRedKill;
+var imgCsMudWin;
+var imgCsMudFail;
+var imgCsMudKill;
 
 var texBg;
 var texSprites;
@@ -15,6 +18,9 @@ var texCsPipe;
 var texCsRedWin;
 var texCsRedFail;
 var texCsRedKill;
+var texCsMudWin;
+var texCsMudFail;
+var texCsMudKill;
 
 var frameFunc;
 var blockMouse;
@@ -45,6 +51,9 @@ function loaded() {
 	texCsRedWin = makeTexture(imgCsRedWin);
 	texCsRedFail = makeTexture(imgCsRedFail);
 	texCsRedKill = makeTexture(imgCsRedKill);
+	texCsMudWin = makeTexture(imgCsMudWin);
+	texCsMudFail = makeTexture(imgCsMudFail);
+	texCsMudKill = makeTexture(imgCsMudKill);
 
 	bgInit();
 	spriteInit();
@@ -83,6 +92,9 @@ function main() {
 	imgCsRedWin = lod.loadImage('cs_redwin.png');
 	imgCsRedFail = lod.loadImage('cs_redfail.png');
 	imgCsRedKill = lod.loadImage('cs_redkill.png');
+	imgCsMudWin = lod.loadImage('cs_mudwin.png');
+	imgCsMudFail = lod.loadImage('cs_mudfail.png');
+	imgCsMudKill = lod.loadImage('cs_mudkill.png');
 	lod.download(loaded);
 }
 

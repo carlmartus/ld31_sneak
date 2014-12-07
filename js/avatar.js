@@ -28,7 +28,7 @@ var WE_TEXT = [
 function avatarInit(start) {
 	avatarWalker = new NodeWalker(nodePlayerStart, 35);
 	avatarLastWalkerState = -1;
-	avatarWeapon = WE_PIPE;
+	avatarWeapon = WE_NONE;
 }
 
 function avatarFrame(ft) {
@@ -59,6 +59,7 @@ function avatarFrame(ft) {
 					break;
 
 				case ACTION_PICK_KNIFE :
+				case ACTION_PICK_PIPE :
 					spriteAdd(avatarWalker.x, avatarWalker.y,
 							32, SP_PLAYER_IDLE);
 					break;
@@ -99,6 +100,10 @@ function avatarMouse() {
 					avatarWeapon = WE_KNIFE;
 					break;
 
+				case ACTION_PICK_PIPE :
+					avatarWeapon = WE_PIPE;
+					break;
+
 				case ACTION_HIDE_ATTACK :
 					var target = avatarWalker.from.rebase;
 					var suc = aiAttack(target.x, target.y, avatarWeapon);
@@ -135,6 +140,10 @@ function avatarUpdateActions(action) {
 
 		case ACTION_PICK_KNIFE :
 			avatarActionSprite = SP_ICON_KNIFE;
+			break;
+
+		case ACTION_PICK_PIPE :
+			avatarActionSprite = SP_ICON_PIPE;
 			break;
 	}
 }

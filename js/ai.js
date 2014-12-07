@@ -7,13 +7,20 @@ var CAUGHT_RAD = 16;
 var AIMSG_RED_WIN;
 var AIMSG_RED_FAIL;
 var AIMSG_RED_LOSE;
+var AIMSG_MUD_WIN;
+var AIMSG_MUD_FAIL;
+var AIMSG_MUD_LOSE;
 
 function aiInit() {
 	AIMSG_RED_WIN = [texCsRedWin, 'you got caught', null];
 	AIMSG_RED_FAIL = [texCsRedFail, 'he he he', null];
 	AIMSG_RED_LOSE = [texCsRedKill, 'take that', null];
 
-	aiWave = 0;
+	AIMSG_MUD_WIN = [texCsMudWin, 'mud got you', null];
+	AIMSG_MUD_FAIL = [texCsMudFail, 'ho ho ho', null];
+	AIMSG_MUD_LOSE = [texCsMudKill, 'splat', null];
+
+	aiWave = 1;
 	aiRespawnWave();
 }
 
@@ -28,9 +35,26 @@ function aiRespawnWave() {
 
 	switch (aiWave) {
 		case 0 :
+			spawnMud();
 			spawnRed();
 			spawnRed();
+			break;
+
+		case 1 :
+			spawnMud();
+			spawnMud();
+			break;
+
+		case 2 :
 			spawnRed();
+			spawnMud();
+			spawnMud();
+			break;
+
+		case 2 :
+			spawnRed();
+			spawnMud();
+			spawnMud();
 			break;
 	}
 }
@@ -41,6 +65,14 @@ function spawnRed() {
 				nodeAiStart0, SP_AI_RED,
 				AIMSG_RED_WIN, AIMSG_RED_FAIL,
 				AIMSG_RED_LOSE, WE_KNIFE));
+}
+
+function spawnMud() {
+	aiList.push(
+			new Ai(
+				nodeAiStart0, SP_AI_MUD,
+				AIMSG_MUD_WIN, AIMSG_MUD_FAIL,
+				AIMSG_MUD_LOSE, WE_PIPE));
 }
 
 function aiAttack(x, y, weapon) {

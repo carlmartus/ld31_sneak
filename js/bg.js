@@ -58,8 +58,12 @@ function bgRenderPre(ft) {
 function bgRenderPost() {
 	spriteAdd(95, 63, 32, SP_BRUSH0);
 	spriteAdd(118, 68, 32, SP_BRUSH0);
+	spriteAdd(185, 85, 32, SP_BRUSH0);
+	spriteAdd(95, 130, 32, SP_BRUSH0);
+	spriteAdd(175, 122, 32, SP_BRUSH0);
 
 	spriteAdd(117, 176, 32, SP_BRUSH0);
 	spriteAdd(18, 127, 32, SP_BRUSH0);
+	spriteAdd(70, 190, 32, SP_BRUSH0);
 }
 

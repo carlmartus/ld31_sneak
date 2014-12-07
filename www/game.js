@@ -58,7 +58,13 @@ function bgRenderPre(ft) {
 function bgRenderPost() {
 	spriteAdd(95, 63, 32, SP_BRUSH0);
 	spriteAdd(118, 68, 32, SP_BRUSH0);
+	spriteAdd(185, 85, 32, SP_BRUSH0);
+	spriteAdd(95, 130, 32, SP_BRUSH0);
+	spriteAdd(175, 122, 32, SP_BRUSH0);
+
 	spriteAdd(117, 176, 32, SP_BRUSH0);
+	spriteAdd(18, 127, 32, SP_BRUSH0);
+	spriteAdd(70, 190, 32, SP_BRUSH0);
 }
 
 var gl;
@@ -70,6 +76,9 @@ var imgCsPipe;
 var imgCsRedWin;
 var imgCsRedFail;
 var imgCsRedKill;
+var imgCsMudWin;
+var imgCsMudFail;
+var imgCsMudKill;
 
 var texBg;
 var texSprites;
@@ -78,6 +87,9 @@ var texCsPipe;
 var texCsRedWin;
 var texCsRedFail;
 var texCsRedKill;
+var texCsMudWin;
+var texCsMudFail;
+var texCsMudKill;
 
 var frameFunc;
 var blockMouse;
@@ -108,6 +120,9 @@ function loaded() {
 	texCsRedWin = makeTexture(imgCsRedWin);
 	texCsRedFail = makeTexture(imgCsRedFail);
 	texCsRedKill = makeTexture(imgCsRedKill);
+	texCsMudWin = makeTexture(imgCsMudWin);
+	texCsMudFail = makeTexture(imgCsMudFail);
+	texCsMudKill = makeTexture(imgCsMudKill);
 
 	bgInit();
 	spriteInit();
@@ -146,6 +161,9 @@ function main() {
 	imgCsRedWin = lod.loadImage('cs_redwin.png');
 	imgCsRedFail = lod.loadImage('cs_redfail.png');
 	imgCsRedKill = lod.loadImage('cs_redkill.png');
+	imgCsMudWin = lod.loadImage('cs_mudwin.png');
+	imgCsMudFail = lod.loadImage('cs_mudfail.png');
+	imgCsMudKill = lod.loadImage('cs_mudkill.png');
 	lod.download(loaded);
 }
 
@@ -207,7 +225,7 @@ var WE_TEXT = [
 function avatarInit(start) {
 	avatarWalker = new NodeWalker(nodePlayerStart, 35);
 	avatarLastWalkerState = -1;
-	avatarWeapon = WE_PIPE;
+	avatarWeapon = WE_NONE;
 }
 
 function avatarFrame(ft) {
@@ -238,6 +256,7 @@ function avatarFrame(ft) {
 					break;
 
 				case ACTION_PICK_KNIFE :
+				case ACTION_PICK_PIPE :
 					spriteAdd(avatarWalker.x, avatarWalker.y,
 							32, SP_PLAYER_IDLE);
 					break;
@@ -278,6 +297,10 @@ function avatarMouse() {
 					avatarWeapon = WE_KNIFE;
 					break;
 
+				case ACTION_PICK_PIPE :
+					avatarWeapon = WE_PIPE;
+					break;
+
 				case ACTION_HIDE_ATTACK :
 					var target = avatarWalker.from.rebase;
 					var suc = aiAttack(target.x, target.y, avatarWeapon);
@@ -314,6 +337,10 @@ function avatarUpdateActions(action) {
 
 		case ACTION_PICK_KNIFE :
 			avatarActionSprite = SP_ICON_KNIFE;
+			break;
+
+		case ACTION_PICK_PIPE :
+			avatarActionSprite = SP_ICON_PIPE;
 			break;
 	}
 }
@@ -383,13 +410,20 @@ var CAUGHT_RAD = 16;
 var AIMSG_RED_WIN;
 var AIMSG_RED_FAIL;
 var AIMSG_RED_LOSE;
+var AIMSG_MUD_WIN;
+var AIMSG_MUD_FAIL;
+var AIMSG_MUD_LOSE;
 
 function aiInit() {
 	AIMSG_RED_WIN = [texCsRedWin, 'you got caught', null];
 	AIMSG_RED_FAIL = [texCsRedFail, 'he he he', null];
 	AIMSG_RED_LOSE = [texCsRedKill, 'take that', null];
 
-	aiWave = 0;
+	AIMSG_MUD_WIN = [texCsMudWin, 'mud got you', null];
+	AIMSG_MUD_FAIL = [texCsMudFail, 'ho ho ho', null];
+	AIMSG_MUD_LOSE = [texCsMudKill, 'splat', null];
+
+	aiWave = 1;
 	aiRespawnWave();
 }
 
@@ -404,9 +438,26 @@ function aiRespawnWave() {
 
 	switch (aiWave) {
 		case 0 :
+			spawnMud();
 			spawnRed();
 			spawnRed();
+			break;
+
+		case 1 :
+			spawnMud();
+			spawnMud();
+			break;
+
+		case 2 :
 			spawnRed();
+			spawnMud();
+			spawnMud();
+			break;
+
+		case 2 :
+			spawnRed();
+			spawnMud();
+			spawnMud();
 			break;
 	}
 }
@@ -417,6 +468,14 @@ function spawnRed() {
 				nodeAiStart0, SP_AI_RED,
 				AIMSG_RED_WIN, AIMSG_RED_FAIL,
 				AIMSG_RED_LOSE, WE_KNIFE));
+}
+
+function spawnMud() {
+	aiList.push(
+			new Ai(
+				nodeAiStart0, SP_AI_MUD,
+				AIMSG_MUD_WIN, AIMSG_MUD_FAIL,
+				AIMSG_MUD_LOSE, WE_PIPE));
 }
 
 function aiAttack(x, y, weapon) {
@@ -577,11 +636,13 @@ var SP_ICON_HIDE = [4, 0];
 var SP_ICON_HIDE_ATTACK = [5, 0];
 var SP_ICON_TELEPORT = [6, 0];
 var SP_ICON_KNIFE = [7, 0];
+var SP_ICON_PIPE = [8, 0];
 
 var SP_BRUSH0 = [0, 11];
 
 var SP_PLAYER = [0, 1];
 var SP_AI_RED = [0, 2];
+var SP_AI_MUD = [0, 3];
 
 // Comp 0 - x
 // Comp 1 - y
@@ -688,6 +749,7 @@ var ACTION_HIDE = 1;
 var ACTION_HIDE_ATTACK = 2;
 var ACTION_TELEPORT = 3;
 var ACTION_PICK_KNIFE = 4;
+var ACTION_PICK_PIPE = 5;
 
 var nodeAiStart0;
 var nodePlayerStart;
@@ -713,6 +775,11 @@ function nodeInit() {
 	var skurkBox1 = packNode(404, 314, ACTION_HIDE_ATTACK);
 	var skurk3 = packNode(462, 331);
 
+	var junk0 = packNode(299, 325);
+	var junk2 = packNode(299, 434);
+	var junk3 = packNode(431, 432);
+	var junkPipe = packNode(473, 433, ACTION_PICK_PIPE);
+
 	nord0.linkWest(nordBox0);
 	nordBox0.linkWest(nord1);
 	nordBox0.linkHide(nordBox1);
@@ -736,6 +803,12 @@ function nodeInit() {
 
 	alley2.linkTeleport(nord0);
 	nord0.linkTeleport(alley2);
+
+	junk0.linkWest(skurk2);
+	junk0.linkSouth(junk2);
+	junk2.linkWest(junk3);
+	junk3.linkWest(junkPipe);
+	skurk3.linkSouth(junk3);
 
 	nodeAiStart0 = nord1;
 	nodePlayerStart = skurk1;

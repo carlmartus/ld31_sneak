@@ -8,6 +8,7 @@ var ACTION_HIDE = 1;
 var ACTION_HIDE_ATTACK = 2;
 var ACTION_TELEPORT = 3;
 var ACTION_PICK_KNIFE = 4;
+var ACTION_PICK_PIPE = 5;
 
 var nodeAiStart0;
 var nodePlayerStart;
@@ -33,6 +34,11 @@ function nodeInit() {
 	var skurkBox1 = packNode(404, 314, ACTION_HIDE_ATTACK);
 	var skurk3 = packNode(462, 331);
 
+	var junk0 = packNode(299, 325);
+	var junk2 = packNode(299, 434);
+	var junk3 = packNode(431, 432);
+	var junkPipe = packNode(473, 433, ACTION_PICK_PIPE);
+
 	nord0.linkWest(nordBox0);
 	nordBox0.linkWest(nord1);
 	nordBox0.linkHide(nordBox1);
@@ -56,6 +62,12 @@ function nodeInit() {
 
 	alley2.linkTeleport(nord0);
 	nord0.linkTeleport(alley2);
+
+	junk0.linkWest(skurk2);
+	junk0.linkSouth(junk2);
+	junk2.linkWest(junk3);
+	junk3.linkWest(junkPipe);
+	skurk3.linkSouth(junk3);
 
 	nodeAiStart0 = nord1;
 	nodePlayerStart = skurk1;

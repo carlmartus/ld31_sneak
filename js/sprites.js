@@ -20,11 +20,13 @@ var SP_ICON_HIDE = [4, 0];
 var SP_ICON_HIDE_ATTACK = [5, 0];
 var SP_ICON_TELEPORT = [6, 0];
 var SP_ICON_KNIFE = [7, 0];
+var SP_ICON_PIPE = [8, 0];
 
 var SP_BRUSH0 = [0, 11];
 
 var SP_PLAYER = [0, 1];
 var SP_AI_RED = [0, 2];
+var SP_AI_MUD = [0, 3];
 
 // Comp 0 - x
 // Comp 1 - y
