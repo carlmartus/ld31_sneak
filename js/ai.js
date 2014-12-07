@@ -17,7 +17,7 @@ function aiFrame(ft) {
 
 function aiRespawnWave() {
 	aiList = [];
-	var deathMsg = [texCsKnife, 'you got caught'];
+	var deathMsg = [texCsRedWin, 'you got caught'];
 
 	switch (aiWave) {
 		case 0 :

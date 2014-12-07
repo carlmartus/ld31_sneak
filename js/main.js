@@ -33,6 +33,12 @@ function makeTexture(img) {
 }
 
 function loaded() {
+	texBg = makeTexture(imgBg);
+	texSprites = makeTexture(imgSprites);
+	texCsKnife = makeTexture(imgCsKnife);
+	texCsRedWin = makeTexture(imgCsRedWin);
+	texCsRedKill = makeTexture(imgCsRedKill);
+
 	bgInit();
 	spriteInit();
 	nodeInit();
@@ -40,23 +46,15 @@ function loaded() {
 	avatarInit();
 	deathInit();
 
-	texBg = makeTexture(imgBg);
-	texSprites = makeTexture(imgSprites);
-	texCsKnife = makeTexture(imgCsKnife);
-	texCsRedWin = makeTexture(imgCsRedWin);
-	texCsRedKill = makeTexture(imgCsRedKill);
-
 	var canvas = document.getElementById('can');
 	canvas.addEventListener('mousedown', mouseEvent, false);
 
 	esNextFrame(frameExec);
 
-	/*
 	deathQueue(texCsRedWin, 'sneak', 2, null);
 	deathQueue(texCsKnife, 'and', 2, null);
 	deathQueue(texCsRedKill, 'assasinate', 4, null);
-	modeDeath();*/
-	modePlay();
+	modeDeath();
 }
 
 function main() {
