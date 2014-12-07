@@ -19,11 +19,13 @@ var AV_WALKING = 2;
 var WE_NONE = 0;
 var WE_KNIFE = 1;
 var WE_PIPE = 2;
+var WE_MINE = 3;
 
 var WE_TEXT = [
 	'no weapon',
 	'knife',
-	'pipe'];
+	'pipe',
+	'land mine'];
 
 function avatarInit(start) {
 	avatarWalker = new NodeWalker(nodePlayerStart, 35);
@@ -41,7 +43,9 @@ function avatarFrame(ft) {
 		avatarLastWalkerState = avatarWalker.state;
 		avatarUpdateState();
 	}
+}
 
+function avatarRender() {
 	if (!avatarWalker.hidden) {
 		if (avatarAction) {
 			spriteAdd(avatarActionX, avatarActionY, 32, SP_TABLET);
@@ -60,6 +64,8 @@ function avatarFrame(ft) {
 
 				case ACTION_PICK_KNIFE :
 				case ACTION_PICK_PIPE :
+				case ACTION_PICK_MINE :
+				case ACTION_PUT_MINE :
 					spriteAdd(avatarWalker.x, avatarWalker.y,
 							32, SP_PLAYER_IDLE);
 					break;
@@ -75,7 +81,7 @@ function avatarFrame(ft) {
 		}
 	}
 
-	spriteAddText(12, 500, 16, WE_TEXT[avatarWeapon]);
+	spriteAddText(12, 12, 16, WE_TEXT[avatarWeapon]);
 }
 
 function avatarSetMouse(x, y) {
@@ -102,6 +108,15 @@ function avatarMouse() {
 
 				case ACTION_PICK_PIPE :
 					avatarWeapon = WE_PIPE;
+					break;
+
+				case ACTION_PICK_MINE :
+					avatarWeapon = WE_MINE;
+					break;
+
+				case ACTION_PUT_MINE :
+					avatarWeapon = WE_NONE;
+					avatarWalker.from.mined = true;
 					break;
 
 				case ACTION_HIDE_ATTACK :
@@ -142,6 +157,11 @@ function avatarUpdateActions(action) {
 			avatarActionSprite = SP_ICON_KNIFE;
 			break;
 
+		case ACTION_PICK_MINE :
+		case ACTION_PUT_MINE :
+			avatarActionSprite = SP_ICON_MINE;
+			break;
+
 		case ACTION_PICK_PIPE :
 			avatarActionSprite = SP_ICON_PIPE;
 			break;
@@ -159,7 +179,13 @@ function avatarUpdateState() {
 			if (avatarQueueMouse != null) {
 				avatarMouse();
 			}
-			avatarUpdateActions(avatarWalker.from.action);
+
+			var action = avatarWalker.from.action;
+
+			if (action == 0 && avatarWeapon == WE_MINE) {
+				action = ACTION_PUT_MINE;
+			}
+			avatarUpdateActions(action);
 			break;
 
 		case NW_WALKING :

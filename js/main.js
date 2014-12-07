@@ -2,6 +2,7 @@ var gl;
 
 var imgBg;
 var imgSprites;
+var imgCsCleared;
 var imgCsKnife;
 var imgCsPipe;
 var imgCsRedWin;
@@ -13,6 +14,7 @@ var imgCsMudKill;
 
 var texBg;
 var texSprites;
+var texCsCleared;
 var texCsKnife;
 var texCsPipe;
 var texCsRedWin;
@@ -46,6 +48,7 @@ function makeTexture(img) {
 function loaded() {
 	texBg = makeTexture(imgBg);
 	texSprites = makeTexture(imgSprites);
+	texCsCleared = makeTexture(imgCsCleared);
 	texCsKnife = makeTexture(imgCsKnife);
 	texCsPipe = makeTexture(imgCsPipe);
 	texCsRedWin = makeTexture(imgCsRedWin);
@@ -87,6 +90,7 @@ function main() {
 	var lod = new esLoad();
 	imgBg = lod.loadImage('bg.png');
 	imgSprites = lod.loadImage('sprites.png');
+	imgCsCleared = lod.loadImage('cleared.png');
 	imgCsKnife = lod.loadImage('cs_knife.png');
 	imgCsPipe = lod.loadImage('cs_pipe.png');
 	imgCsRedWin = lod.loadImage('cs_redwin.png');

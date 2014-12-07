@@ -38,12 +38,14 @@ function bgInit() {
 	gl.uniform1i(uniTex, 0);
 }
 
-function bgRenderPre(ft) {
-
+function bgStep(ft) {
 	bgTimer += ft*0.2;
 	if (bgTimer > 1.6) {
 		bgTimer = 0.0;
 	}
+}
+
+function bgRenderPre() {
 
 	bgProgram.use();
 	gl.uniform1f(bgUniTimer, bgTimer);

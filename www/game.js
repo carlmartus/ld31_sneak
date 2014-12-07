@@ -38,12 +38,14 @@ function bgInit() {
 	gl.uniform1i(uniTex, 0);
 }
 
-function bgRenderPre(ft) {
-
+function bgStep(ft) {
 	bgTimer += ft*0.2;
 	if (bgTimer > 1.6) {
 		bgTimer = 0.0;
 	}
+}
+
+function bgRenderPre() {
 
 	bgProgram.use();
 	gl.uniform1f(bgUniTimer, bgTimer);
@@ -71,6 +73,7 @@ var gl;
 
 var imgBg;
 var imgSprites;
+var imgCsCleared;
 var imgCsKnife;
 var imgCsPipe;
 var imgCsRedWin;
@@ -82,6 +85,7 @@ var imgCsMudKill;
 
 var texBg;
 var texSprites;
+var texCsCleared;
 var texCsKnife;
 var texCsPipe;
 var texCsRedWin;
@@ -115,6 +119,7 @@ function makeTexture(img) {
 function loaded() {
 	texBg = makeTexture(imgBg);
 	texSprites = makeTexture(imgSprites);
+	texCsCleared = makeTexture(imgCsCleared);
 	texCsKnife = makeTexture(imgCsKnife);
 	texCsPipe = makeTexture(imgCsPipe);
 	texCsRedWin = makeTexture(imgCsRedWin);
@@ -156,6 +161,7 @@ function main() {
 	var lod = new esLoad();
 	imgBg = lod.loadImage('bg.png');
 	imgSprites = lod.loadImage('sprites.png');
+	imgCsCleared = lod.loadImage('cleared.png');
 	imgCsKnife = lod.loadImage('cs_knife.png');
 	imgCsPipe = lod.loadImage('cs_pipe.png');
 	imgCsRedWin = lod.loadImage('cs_redwin.png');
@@ -216,11 +222,13 @@ var AV_WALKING = 2;
 var WE_NONE = 0;
 var WE_KNIFE = 1;
 var WE_PIPE = 2;
+var WE_MINE = 3;
 
 var WE_TEXT = [
 	'no weapon',
 	'knife',
-	'pipe'];
+	'pipe',
+	'land mine'];
 
 function avatarInit(start) {
 	avatarWalker = new NodeWalker(nodePlayerStart, 35);
@@ -238,7 +246,9 @@ function avatarFrame(ft) {
 		avatarLastWalkerState = avatarWalker.state;
 		avatarUpdateState();
 	}
+}
 
+function avatarRender() {
 	if (!avatarWalker.hidden) {
 		if (avatarAction) {
 			spriteAdd(avatarActionX, avatarActionY, 32, SP_TABLET);
@@ -257,6 +267,8 @@ function avatarFrame(ft) {
 
 				case ACTION_PICK_KNIFE :
 				case ACTION_PICK_PIPE :
+				case ACTION_PICK_MINE :
+				case ACTION_PUT_MINE :
 					spriteAdd(avatarWalker.x, avatarWalker.y,
 							32, SP_PLAYER_IDLE);
 					break;
@@ -272,7 +284,7 @@ function avatarFrame(ft) {
 		}
 	}
 
-	spriteAddText(12, 500, 16, WE_TEXT[avatarWeapon]);
+	spriteAddText(12, 12, 16, WE_TEXT[avatarWeapon]);
 }
 
 function avatarSetMouse(x, y) {
@@ -299,6 +311,15 @@ function avatarMouse() {
 
 				case ACTION_PICK_PIPE :
 					avatarWeapon = WE_PIPE;
+					break;
+
+				case ACTION_PICK_MINE :
+					avatarWeapon = WE_MINE;
+					break;
+
+				case ACTION_PUT_MINE :
+					avatarWeapon = WE_NONE;
+					avatarWalker.from.mined = true;
 					break;
 
 				case ACTION_HIDE_ATTACK :
@@ -339,6 +360,11 @@ function avatarUpdateActions(action) {
 			avatarActionSprite = SP_ICON_KNIFE;
 			break;
 
+		case ACTION_PICK_MINE :
+		case ACTION_PUT_MINE :
+			avatarActionSprite = SP_ICON_MINE;
+			break;
+
 		case ACTION_PICK_PIPE :
 			avatarActionSprite = SP_ICON_PIPE;
 			break;
@@ -356,7 +382,13 @@ function avatarUpdateState() {
 			if (avatarQueueMouse != null) {
 				avatarMouse();
 			}
-			avatarUpdateActions(avatarWalker.from.action);
+
+			var action = avatarWalker.from.action;
+
+			if (action == 0 && avatarWeapon == WE_MINE) {
+				action = ACTION_PUT_MINE;
+			}
+			avatarUpdateActions(action);
 			break;
 
 		case NW_WALKING :
@@ -404,6 +436,8 @@ function avatarOnAction(x, y) {
 var aiList;
 var aiWave = 0;
 
+var AI_WAVES = 4;
+
 var AI_RAND = 16;
 var CAUGHT_RAD = 16;
 
@@ -423,13 +457,26 @@ function aiInit() {
 	AIMSG_MUD_FAIL = [texCsMudFail, 'ho ho ho', null];
 	AIMSG_MUD_LOSE = [texCsMudKill, 'splat', null];
 
-	aiWave = 1;
+	aiWave = 0;
 	aiRespawnWave();
 }
 
 function aiFrame(ft) {
 	for (var i=0; i<aiList.length; i++) {
-		aiList[i].frame(ft);
+		if (aiList[i].frame(ft)) {
+			spriteExplosion(
+					aiList[i].walker.x,
+					aiList[i].walker.y);
+			aiList.splice(i, 1);
+			aiCheckClear();
+			return;
+		}
+	}
+}
+
+function aiRender() {
+	for (var i=0; i<aiList.length; i++) {
+		aiList[i].render();
 	}
 }
 
@@ -438,7 +485,6 @@ function aiRespawnWave() {
 
 	switch (aiWave) {
 		case 0 :
-			spawnMud();
 			spawnRed();
 			spawnRed();
 			break;
@@ -446,18 +492,13 @@ function aiRespawnWave() {
 		case 1 :
 			spawnMud();
 			spawnMud();
-			break;
-
-		case 2 :
-			spawnRed();
-			spawnMud();
 			spawnMud();
 			break;
 
 		case 2 :
 			spawnRed();
 			spawnMud();
-			spawnMud();
+			spawnRed();
 			break;
 	}
 }
@@ -504,9 +545,10 @@ function aiAttack(x, y, weapon) {
 						aiList[i].killMsg[2]);
 				aiList.splice(i, 1);
 
+				aiCheckClear();
 				modeDeath();
 				return true;
-			} else if (weapon != WE_NONE) {
+			} else if (weapon != WE_NONE || weapon != WE_MINE) {
 				deathQueue(
 						aiList[i].failMsg[0],
 						aiList[i].failMsg[1],
@@ -521,6 +563,20 @@ function aiAttack(x, y, weapon) {
 		}
 	}
 	return false;
+}
+
+function aiCheckClear() {
+	if (aiList.length > 0) return;
+
+	aiWave += 1;
+	deathReborn();
+
+	if (aiWave >= AI_WAVES) {
+		deathQueue(texCsCleared, 'game completed', 30, null);
+	} else {
+		deathQueue(texCsCleared, 'next level', 2, null);
+	}
+	modeDeath();
 }
 
 function Ai(startNode, spriteBase, winMsg, failMsg, killMsg, voln) {
@@ -539,10 +595,21 @@ function Ai(startNode, spriteBase, winMsg, failMsg, killMsg, voln) {
 
 Ai.prototype.frame = function(ft) {
 	if (this.walker.state == NW_IDLE) {
+		if (this.walker.from.mined) {
+			this.walker.from.mined = false;
+			return true;
+		}
 		this.planTravel();
 	}
 	this.walker.frame(ft);
 
+	if (this.attack && this.caughtPlayer()) {
+		this.killPlayer();
+	}
+	return false;
+}
+
+Ai.prototype.render = function() {
 	var aniSelect =
 		this.walker.animation + this.walker.animationBase;
 	var ani = [
@@ -554,10 +621,6 @@ Ai.prototype.frame = function(ft) {
 			Math.floor(this.walker.x + this.offsetX),
 			Math.floor(this.walker.y + this.offsetY) + yOffset,
 			24.0, ani);
-
-	if (this.attack && this.caughtPlayer()) {
-		this.killPlayer();
-	}
 }
 
 Ai.prototype.killPlayer = function() {
@@ -629,6 +692,7 @@ var SP_NODE = [0, 0];
 var SP_CROSS = [1, 0];
 var SP_BOX_FREE = [1, 0];
 var SP_BOX_TAKEN = [2, 0];
+var SP_MINED = [12, 0];
 var SP_PLAYER_IDLE = [8, 1];
 var SP_PLAYER_SNEAK = [9, 1];
 var SP_TABLET = [3, 0];
@@ -637,6 +701,7 @@ var SP_ICON_HIDE_ATTACK = [5, 0];
 var SP_ICON_TELEPORT = [6, 0];
 var SP_ICON_KNIFE = [7, 0];
 var SP_ICON_PIPE = [8, 0];
+var SP_ICON_MINE = [9, 0];
 
 var SP_BRUSH0 = [0, 11];
 
@@ -672,6 +737,9 @@ function spriteInit() {
 	var uniMvp = spriteProgram.getUniform('mvp');
 	gl.uniform1i(uniTex, 0);
 	gl.uniformMatrix4fv(uniMvp, false, bgMvp);
+}
+
+function spriteExplosion(x, y) {
 }
 
 function spriteAdd(x, y, size, uvId) {
@@ -750,6 +818,8 @@ var ACTION_HIDE_ATTACK = 2;
 var ACTION_TELEPORT = 3;
 var ACTION_PICK_KNIFE = 4;
 var ACTION_PICK_PIPE = 5;
+var ACTION_PICK_MINE = 6;
+var ACTION_PUT_MINE = 10;
 
 var nodeAiStart0;
 var nodePlayerStart;
@@ -775,10 +845,13 @@ function nodeInit() {
 	var skurkBox1 = packNode(404, 314, ACTION_HIDE_ATTACK);
 	var skurk3 = packNode(462, 331);
 
-	var junk0 = packNode(299, 325);
+	var junk0 = packNode(299, 325, ACTION_TELEPORT);
 	var junk2 = packNode(299, 434);
 	var junk3 = packNode(431, 432);
 	var junkPipe = packNode(473, 433, ACTION_PICK_PIPE);
+
+	var mine0 = packNode(221, 216, ACTION_TELEPORT);
+	var mine1 = packNode(260, 218, ACTION_PICK_MINE);
 
 	nord0.linkWest(nordBox0);
 	nordBox0.linkWest(nord1);
@@ -810,8 +883,12 @@ function nodeInit() {
 	junk3.linkWest(junkPipe);
 	skurk3.linkSouth(junk3);
 
+	mine0.linkWest(mine1);
+	junk0.linkTeleport(mine1);
+	mine0.linkTeleport(nord1);
+
 	nodeAiStart0 = nord1;
-	nodePlayerStart = skurk1;
+	nodePlayerStart = mine1;
 }
 
 function nodeRender() {
@@ -829,6 +906,7 @@ function packNode(x, y, action) {
 function nodeUnOccupy() {
 	for (var i=0; i<nodeList.length; i++) {
 		nodeList[i].occupied = false;
+		nodeList[i].mined = false;
 	}
 }
 
@@ -974,6 +1052,7 @@ function Node(x, y, action) {
 	this.y = y;
 	this.action = action;
 	this.occupied = false;
+	this.mined = false;
 	this.east = this.west = this.north = this.south = null;
 	this.rebase = this.hide = this.teleport = null;
 }
@@ -990,6 +1069,9 @@ Node.prototype.render = function() {
 			break;
 
 		default :
+			if (this.mined) {
+				this.renderSprite(SP_MINED);
+			}
 			//this.renderSprite(SP_NODE);
 	}
 }
@@ -1027,10 +1109,10 @@ function deathInit() {
 	deathDuration = 0.0;
 
 	var vertData = new Float32Array([
-			0.0, 0.0, 0.0, 1.0,
-			1.0, 0.0, 1.0, 1.0,
-			0.0, 1.0, 0.0, 0.0,
-			1.0, 1.0, 1.0, 0.0]);
+			-1.0,-1.0, 0.0, 1.0,
+			 0.0,-1.0, 1.0, 1.0,
+			-1.0, 0.0, 0.0, 0.0,
+			 0.0, 0.0, 1.0, 0.0]);
 
 	deathVbo = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, deathVbo);
@@ -1058,6 +1140,9 @@ function deathQueue(texture, text, duration, sound) {
 }
 
 function deathFrame(ft) {
+
+	playRender();
+
 	if (deathDuration <= 0.0) {
 		if (deathQ.length <= 0) {
 			modePlay();
@@ -1078,20 +1163,28 @@ function deathFrame(ft) {
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	gl.disableVertexAttribArray(0);
 
-	var midX = 256 - ((deathText.length / 2) - 0.5)*32;
-	spriteAddText(midX, 400, 32, deathText);
+	var midX = 128 - ((deathText.length / 2) - 0.5)*16;
+	spriteAddText(midX, 268, 16, deathText);
 
 	deathDuration -= ft;
 }
 
 function playFrame(ft) {
-	bgRenderPre(ft);
+	playStep(ft);
+	playRender();
+}
 
-	nodeRender();
-
+function playStep(ft) {
+	bgStep(ft);
 	avatarFrame(ft);
 	aiFrame(ft);
+}
 
+function playRender() {
+	bgRenderPre();
+	aiRender();
+	nodeRender();
+	avatarRender();
 	bgRenderPost();
 }
 

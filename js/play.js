@@ -1,11 +1,19 @@
 function playFrame(ft) {
-	bgRenderPre(ft);
+	playStep(ft);
+	playRender();
+}
 
-	nodeRender();
-
+function playStep(ft) {
+	bgStep(ft);
 	avatarFrame(ft);
 	aiFrame(ft);
+}
 
+function playRender() {
+	bgRenderPre();
+	aiRender();
+	nodeRender();
+	avatarRender();
 	bgRenderPost();
 }
 

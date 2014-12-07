@@ -13,6 +13,7 @@ var SP_NODE = [0, 0];
 var SP_CROSS = [1, 0];
 var SP_BOX_FREE = [1, 0];
 var SP_BOX_TAKEN = [2, 0];
+var SP_MINED = [12, 0];
 var SP_PLAYER_IDLE = [8, 1];
 var SP_PLAYER_SNEAK = [9, 1];
 var SP_TABLET = [3, 0];
@@ -21,6 +22,7 @@ var SP_ICON_HIDE_ATTACK = [5, 0];
 var SP_ICON_TELEPORT = [6, 0];
 var SP_ICON_KNIFE = [7, 0];
 var SP_ICON_PIPE = [8, 0];
+var SP_ICON_MINE = [9, 0];
 
 var SP_BRUSH0 = [0, 11];
 
@@ -56,6 +58,9 @@ function spriteInit() {
 	var uniMvp = spriteProgram.getUniform('mvp');
 	gl.uniform1i(uniTex, 0);
 	gl.uniformMatrix4fv(uniMvp, false, bgMvp);
+}
+
+function spriteExplosion(x, y) {
 }
 
 function spriteAdd(x, y, size, uvId) {

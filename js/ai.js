@@ -1,6 +1,8 @@
 var aiList;
 var aiWave = 0;
 
+var AI_WAVES = 4;
+
 var AI_RAND = 16;
 var CAUGHT_RAD = 16;
 
@@ -20,13 +22,26 @@ function aiInit() {
 	AIMSG_MUD_FAIL = [texCsMudFail, 'ho ho ho', null];
 	AIMSG_MUD_LOSE = [texCsMudKill, 'splat', null];
 
-	aiWave = 1;
+	aiWave = 0;
 	aiRespawnWave();
 }
 
 function aiFrame(ft) {
 	for (var i=0; i<aiList.length; i++) {
-		aiList[i].frame(ft);
+		if (aiList[i].frame(ft)) {
+			spriteExplosion(
+					aiList[i].walker.x,
+					aiList[i].walker.y);
+			aiList.splice(i, 1);
+			aiCheckClear();
+			return;
+		}
+	}
+}
+
+function aiRender() {
+	for (var i=0; i<aiList.length; i++) {
+		aiList[i].render();
 	}
 }
 
@@ -35,7 +50,6 @@ function aiRespawnWave() {
 
 	switch (aiWave) {
 		case 0 :
-			spawnMud();
 			spawnRed();
 			spawnRed();
 			break;
@@ -43,18 +57,13 @@ function aiRespawnWave() {
 		case 1 :
 			spawnMud();
 			spawnMud();
-			break;
-
-		case 2 :
-			spawnRed();
-			spawnMud();
 			spawnMud();
 			break;
 
 		case 2 :
 			spawnRed();
 			spawnMud();
-			spawnMud();
+			spawnRed();
 			break;
 	}
 }
@@ -101,9 +110,10 @@ function aiAttack(x, y, weapon) {
 						aiList[i].killMsg[2]);
 				aiList.splice(i, 1);
 
+				aiCheckClear();
 				modeDeath();
 				return true;
-			} else if (weapon != WE_NONE) {
+			} else if (weapon != WE_NONE || weapon != WE_MINE) {
 				deathQueue(
 						aiList[i].failMsg[0],
 						aiList[i].failMsg[1],
@@ -118,6 +128,20 @@ function aiAttack(x, y, weapon) {
 		}
 	}
 	return false;
+}
+
+function aiCheckClear() {
+	if (aiList.length > 0) return;
+
+	aiWave += 1;
+	deathReborn();
+
+	if (aiWave >= AI_WAVES) {
+		deathQueue(texCsCleared, 'game completed', 30, null);
+	} else {
+		deathQueue(texCsCleared, 'next level', 2, null);
+	}
+	modeDeath();
 }
 
 function Ai(startNode, spriteBase, winMsg, failMsg, killMsg, voln) {
@@ -136,10 +160,21 @@ function Ai(startNode, spriteBase, winMsg, failMsg, killMsg, voln) {
 
 Ai.prototype.frame = function(ft) {
 	if (this.walker.state == NW_IDLE) {
+		if (this.walker.from.mined) {
+			this.walker.from.mined = false;
+			return true;
+		}
 		this.planTravel();
 	}
 	this.walker.frame(ft);
 
+	if (this.attack && this.caughtPlayer()) {
+		this.killPlayer();
+	}
+	return false;
+}
+
+Ai.prototype.render = function() {
 	var aniSelect =
 		this.walker.animation + this.walker.animationBase;
 	var ani = [
@@ -151,10 +186,6 @@ Ai.prototype.frame = function(ft) {
 			Math.floor(this.walker.x + this.offsetX),
 			Math.floor(this.walker.y + this.offsetY) + yOffset,
 			24.0, ani);
-
-	if (this.attack && this.caughtPlayer()) {
-		this.killPlayer();
-	}
 }
 
 Ai.prototype.killPlayer = function() {

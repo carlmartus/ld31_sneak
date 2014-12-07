@@ -84,9 +84,7 @@ varying vec2 uv;
 
 void main() {
 	uv = pos.zw;
-	vec2 xy = vec2(
-		pos.x - 0.5,
-		pos.y - 0.3);
+	vec2 xy = vec2(pos.x, pos.y);
 	gl_Position = vec4(xy, 0.0, 1.0);
 }
 </script>
@@ -99,7 +97,7 @@ uniform sampler2D tex;
 
 void main() {
 	vec4 col = texture2D(tex, uv);
-	if (col.a < 0.5) discard;
+	if (col.a < 0.5) col = vec4(0.0, 0.0, 0.0, 1.0);
 	gl_FragColor = col;
 }
 </script>

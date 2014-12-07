@@ -9,6 +9,8 @@ var ACTION_HIDE_ATTACK = 2;
 var ACTION_TELEPORT = 3;
 var ACTION_PICK_KNIFE = 4;
 var ACTION_PICK_PIPE = 5;
+var ACTION_PICK_MINE = 6;
+var ACTION_PUT_MINE = 10;
 
 var nodeAiStart0;
 var nodePlayerStart;
@@ -34,10 +36,13 @@ function nodeInit() {
 	var skurkBox1 = packNode(404, 314, ACTION_HIDE_ATTACK);
 	var skurk3 = packNode(462, 331);
 
-	var junk0 = packNode(299, 325);
+	var junk0 = packNode(299, 325, ACTION_TELEPORT);
 	var junk2 = packNode(299, 434);
 	var junk3 = packNode(431, 432);
 	var junkPipe = packNode(473, 433, ACTION_PICK_PIPE);
+
+	var mine0 = packNode(221, 216, ACTION_TELEPORT);
+	var mine1 = packNode(260, 218, ACTION_PICK_MINE);
 
 	nord0.linkWest(nordBox0);
 	nordBox0.linkWest(nord1);
@@ -69,8 +74,12 @@ function nodeInit() {
 	junk3.linkWest(junkPipe);
 	skurk3.linkSouth(junk3);
 
+	mine0.linkWest(mine1);
+	junk0.linkTeleport(mine1);
+	mine0.linkTeleport(nord1);
+
 	nodeAiStart0 = nord1;
-	nodePlayerStart = skurk1;
+	nodePlayerStart = mine1;
 }
 
 function nodeRender() {
@@ -88,6 +97,7 @@ function packNode(x, y, action) {
 function nodeUnOccupy() {
 	for (var i=0; i<nodeList.length; i++) {
 		nodeList[i].occupied = false;
+		nodeList[i].mined = false;
 	}
 }
 
@@ -233,6 +243,7 @@ function Node(x, y, action) {
 	this.y = y;
 	this.action = action;
 	this.occupied = false;
+	this.mined = false;
 	this.east = this.west = this.north = this.south = null;
 	this.rebase = this.hide = this.teleport = null;
 }
@@ -249,6 +260,9 @@ Node.prototype.render = function() {
 			break;
 
 		default :
+			if (this.mined) {
+				this.renderSprite(SP_MINED);
+			}
 			//this.renderSprite(SP_NODE);
 	}
 }

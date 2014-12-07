@@ -12,10 +12,10 @@ function deathInit() {
 	deathDuration = 0.0;
 
 	var vertData = new Float32Array([
-			0.0, 0.0, 0.0, 1.0,
-			1.0, 0.0, 1.0, 1.0,
-			0.0, 1.0, 0.0, 0.0,
-			1.0, 1.0, 1.0, 0.0]);
+			-1.0,-1.0, 0.0, 1.0,
+			 0.0,-1.0, 1.0, 1.0,
+			-1.0, 0.0, 0.0, 0.0,
+			 0.0, 0.0, 1.0, 0.0]);
 
 	deathVbo = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, deathVbo);
@@ -43,6 +43,9 @@ function deathQueue(texture, text, duration, sound) {
 }
 
 function deathFrame(ft) {
+
+	playRender();
+
 	if (deathDuration <= 0.0) {
 		if (deathQ.length <= 0) {
 			modePlay();
@@ -63,8 +66,8 @@ function deathFrame(ft) {
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	gl.disableVertexAttribArray(0);
 
-	var midX = 256 - ((deathText.length / 2) - 0.5)*32;
-	spriteAddText(midX, 400, 32, deathText);
+	var midX = 128 - ((deathText.length / 2) - 0.5)*16;
+	spriteAddText(midX, 268, 16, deathText);
 
 	deathDuration -= ft;
 }
