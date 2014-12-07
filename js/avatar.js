@@ -11,12 +11,18 @@ var avatarNodeAt;
 var avatarNodeTravelA;
 var avatarNodeTravelB;
 
+var avatarWeapon;
+
 var AV_WAITING = 1;
 var AV_WALKING = 2;
+
+var WE_NONE = 0;
+var WE_KNIFE = 1;
 
 function avatarInit(start) {
 	avatarWalker = new NodeWalker(nodePlayerStart, 35);
 	avatarLastWalkerState = -1;
+	avatarWeapon = WE_NONE;
 }
 
 function avatarFrame(ft) {

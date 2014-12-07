@@ -1,12 +1,18 @@
 var gl;
+
 var imgBg;
 var imgSprites;
 var imgCsKnife;
-var frameFunc;
+var imgCsRedWin;
+var imgCsRedKill;
 
 var texBg;
 var texSprites;
 var texCsKnife;
+var texCsRedWin;
+var texCsRedKill;
+
+var frameFunc;
 
 function frameExec(ft) {
 	if (ft > 0.3) return;
@@ -37,16 +43,20 @@ function loaded() {
 	texBg = makeTexture(imgBg);
 	texSprites = makeTexture(imgSprites);
 	texCsKnife = makeTexture(imgCsKnife);
+	texCsRedWin = makeTexture(imgCsRedWin);
+	texCsRedKill = makeTexture(imgCsRedKill);
 
 	var canvas = document.getElementById('can');
 	canvas.addEventListener('mousedown', mouseEvent, false);
 
 	esNextFrame(frameExec);
 
-	deathQueue(texCsKnife, 'sneak', 2, null);
+	/*
+	deathQueue(texCsRedWin, 'sneak', 2, null);
 	deathQueue(texCsKnife, 'and', 2, null);
-	deathQueue(texCsKnife, 'assasinate', 4, null);
-	modeDeath();
+	deathQueue(texCsRedKill, 'assasinate', 4, null);
+	modeDeath();*/
+	modePlay();
 }
 
 function main() {
@@ -61,6 +71,8 @@ function main() {
 	imgBg = lod.loadImage('bg.png');
 	imgSprites = lod.loadImage('sprites.png');
 	imgCsKnife = lod.loadImage('cs_knife.png');
+	imgCsRedWin = lod.loadImage('cs_redwin.png');
+	imgCsRedKill = lod.loadImage('cs_redkill.png');
 	lod.download(loaded);
 }
 

@@ -7,7 +7,7 @@ var ACTION_NONE = 0;
 var ACTION_HIDE = 1;
 var ACTION_HIDE_ATTACK = 2;
 
-var nodeAiStart;
+var nodeAiStart0;
 var nodePlayerStart;
 
 function nodeInit() {
@@ -48,7 +48,7 @@ function nodeInit() {
 	skurk2.linkWest(skurk3);
 	skurk1.linkSouth(skurk3);
 
-	nodeAiStart = skurk0;
+	nodeAiStart0 = skurk0;
 	nodePlayerStart = nord0;
 }
 

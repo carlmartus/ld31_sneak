@@ -43,14 +43,20 @@ function bgRender() {
 }
 
 var gl;
+
 var imgBg;
 var imgSprites;
 var imgCsKnife;
-var frameFunc;
+var imgCsRedWin;
+var imgCsRedKill;
 
 var texBg;
 var texSprites;
 var texCsKnife;
+var texCsRedWin;
+var texCsRedKill;
+
+var frameFunc;
 
 function frameExec(ft) {
 	if (ft > 0.3) return;
@@ -81,16 +87,20 @@ function loaded() {
 	texBg = makeTexture(imgBg);
 	texSprites = makeTexture(imgSprites);
 	texCsKnife = makeTexture(imgCsKnife);
+	texCsRedWin = makeTexture(imgCsRedWin);
+	texCsRedKill = makeTexture(imgCsRedKill);
 
 	var canvas = document.getElementById('can');
 	canvas.addEventListener('mousedown', mouseEvent, false);
 
 	esNextFrame(frameExec);
 
-	deathQueue(texCsKnife, 'sneak', 2, null);
+	/*
+	deathQueue(texCsRedWin, 'sneak', 2, null);
 	deathQueue(texCsKnife, 'and', 2, null);
-	deathQueue(texCsKnife, 'assasinate', 4, null);
-	modeDeath();
+	deathQueue(texCsRedKill, 'assasinate', 4, null);
+	modeDeath();*/
+	modePlay();
 }
 
 function main() {
@@ -105,6 +115,8 @@ function main() {
 	imgBg = lod.loadImage('bg.png');
 	imgSprites = lod.loadImage('sprites.png');
 	imgCsKnife = lod.loadImage('cs_knife.png');
+	imgCsRedWin = lod.loadImage('cs_redwin.png');
+	imgCsRedKill = lod.loadImage('cs_redkill.png');
 	lod.download(loaded);
 }
 
@@ -144,12 +156,18 @@ var avatarNodeAt;
 var avatarNodeTravelA;
 var avatarNodeTravelB;
 
+var avatarWeapon;
+
 var AV_WAITING = 1;
 var AV_WALKING = 2;
+
+var WE_NONE = 0;
+var WE_KNIFE = 1;
 
 function avatarInit(start) {
 	avatarWalker = new NodeWalker(nodePlayerStart, 35);
 	avatarLastWalkerState = -1;
+	avatarWeapon = WE_NONE;
 }
 
 function avatarFrame(ft) {
@@ -266,7 +284,8 @@ var AI_RAND = 32;
 var CAUGHT_RAD = 10;
 
 function aiInit() {
-	aiNextWave();
+	aiWave = 0;
+	aiRespawnWave();
 }
 
 function aiFrame(ft) {
@@ -275,16 +294,21 @@ function aiFrame(ft) {
 	}
 }
 
-function aiNextWave() {
+function aiRespawnWave() {
 	aiList = [];
-	aiList.push(new Ai(nodeAiStart, SP_AI_RED));
-	aiList.push(new Ai(nodeAiStart, SP_AI_RED));
-	aiList.push(new Ai(nodeAiStart, SP_AI_RED));
-	aiList.push(new Ai(nodeAiStart, SP_AI_RED));
-	aiWave++;
+	var deathMsg = [texCsKnife, 'you got caught'];
+
+	switch (aiWave) {
+		case 0 :
+			aiList.push(new Ai(nodeAiStart0, SP_AI_RED, deathMsg));
+			aiList.push(new Ai(nodeAiStart0, SP_AI_RED, deathMsg));
+			aiList.push(new Ai(nodeAiStart0, SP_AI_RED, deathMsg));
+			aiList.push(new Ai(nodeAiStart0, SP_AI_RED, deathMsg));
+			break;
+	}
 }
 
-function Ai(startNode, spriteBase) {
+function Ai(startNode, spriteBase, deathMsg) {
 	this.attack = false;
 	this.orgSpeed = 20+Math.random()*15;
 	this.walker = new NodeWalker(startNode, this.orgSpeed);
@@ -292,6 +316,7 @@ function Ai(startNode, spriteBase) {
 	this.offsetY = (Math.random() - 0.5)*AI_RAND;
 	this.walker.goRandom();
 	this.spriteBase = spriteBase;
+	this.deathMsg = deathMsg;
 }
 
 Ai.prototype.frame = function(ft) {
@@ -313,9 +338,10 @@ Ai.prototype.frame = function(ft) {
 			24.0, ani);
 
 	if (this.caughtPlayer()) {
-		deathQueue(texCsKnife, 'knife attacku', 4, null);
+		deathQueue(this.deathMsg[0], this.deathMsg[1],
+				3, this.deathMsg[2]);
 		modeDeath();
-		modeDeath();
+		deathReborn();
 	}
 }
 
@@ -487,7 +513,7 @@ var ACTION_NONE = 0;
 var ACTION_HIDE = 1;
 var ACTION_HIDE_ATTACK = 2;
 
-var nodeAiStart;
+var nodeAiStart0;
 var nodePlayerStart;
 
 function nodeInit() {
@@ -528,7 +554,7 @@ function nodeInit() {
 	skurk2.linkWest(skurk3);
 	skurk1.linkSouth(skurk3);
 
-	nodeAiStart = skurk0;
+	nodeAiStart0 = skurk0;
 	nodePlayerStart = nord0;
 }
 
@@ -734,6 +760,11 @@ function deathInit() {
 	deathProgram.bindAttribute(0, 'pos');
 	deathProgram.link();
 	deathUniTex = deathProgram.getUniform('tex');
+}
+
+function deathReborn() {
+	avatarInit(nodePlayerStart);
+	aiRespawnWave();
 }
 
 function deathQueue(texture, text, duration, sound) {

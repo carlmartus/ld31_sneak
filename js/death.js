@@ -29,6 +29,11 @@ function deathInit() {
 	deathUniTex = deathProgram.getUniform('tex');
 }
 
+function deathReborn() {
+	avatarInit(nodePlayerStart);
+	aiRespawnWave();
+}
+
 function deathQueue(texture, text, duration, sound) {
 	deathQ.push([texture, text, duration]);
 }
