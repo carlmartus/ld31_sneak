@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <title>Sneak</title>
 <style>
-body { background: gray; }
+body { margin: 0px; padding: 40px; background: gray; }
 </style>
 
 <script type="x-shader/x-vertex" id="sprite-vs">
@@ -105,7 +105,9 @@ void main() {
 </head>
 
 <body onload="main();">
+<div style="width: 100%; text-align: center;">
 <canvas id="can" width="512" height="512"></canvas>
+</div>
 <script type="text/javascript" src="estk.min.js"></script>
 <script type="text/javascript" src="game.js"></script>
 </body>
