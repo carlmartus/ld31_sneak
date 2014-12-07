@@ -135,7 +135,6 @@ function mouseEvent(event) {
 
 	var x = event.clientX - (rect.x | rect.left);
 	var y = event.clientY - (rect.y | rect.top);
-	console.log(event, rect, x, y);
 	avatarSetMouse(x, y);
 }
 
