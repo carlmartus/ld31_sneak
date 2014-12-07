@@ -30,6 +30,7 @@ var sndWhat;
 var sndAttack0;
 var sndAttack1;
 var sndPou;
+var sndExpl;
 
 var frameFunc;
 var blockMouse;
@@ -72,16 +73,17 @@ function loaded() {
 	avatarInit();
 	deathInit();
 
+	//spriteExplosion(100, 100);
+
 	var canvas = document.getElementById('can');
 	canvas.addEventListener('mousedown', mouseEvent, false);
 
 	esNextFrame(frameExec);
 
-	/*
 	deathQueue(texCsRedWin, 'sneak', 2, null);
 	deathQueue(texCsKnife, 'and', 2, null);
 	deathQueue(texCsRedKill, 'assasinate', 4, null);
-	modeDeath();*/
+	modeDeath();
 
 	modePlay();
 }
@@ -113,6 +115,7 @@ function main() {
 	sndAttack0 = lod.loadAudio('attack0.ogg');
 	sndAttack1 = lod.loadAudio('attack1.ogg');
 	sndPou = lod.loadAudio('pou.ogg');
+	sndExpl = lod.loadAudio('expl.ogg');
 
 	lod.download(loaded);
 }

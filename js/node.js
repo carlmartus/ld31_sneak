@@ -79,7 +79,7 @@ function nodeInit() {
 	mine0.linkTeleport(nord1);
 
 	nodeAiStart0 = nord1;
-	nodePlayerStart = mine1;
+	nodePlayerStart = skurk1;
 }
 
 function nodeRender() {

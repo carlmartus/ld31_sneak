@@ -2,6 +2,9 @@ var spriteList;
 var spriteCount;
 var spriteVbo;
 var spriteProgram;
+var spriteExplTime;
+var spriteExplX;
+var spriteExplY;
 
 var SPRITE_MAX = 100;
 var SPRITE_COMPS = 5;
@@ -14,6 +17,7 @@ var SP_CROSS = [1, 0];
 var SP_BOX_FREE = [1, 0];
 var SP_BOX_TAKEN = [2, 0];
 var SP_MINED = [12, 0];
+var SP_EXPL = [13, 0];
 var SP_PLAYER_IDLE = [8, 1];
 var SP_PLAYER_SNEAK = [9, 1];
 var SP_TABLET = [3, 0];
@@ -61,6 +65,10 @@ function spriteInit() {
 }
 
 function spriteExplosion(x, y) {
+	spriteExplTime = 1.0;
+	spriteExplX = x;
+	spriteExplY = y;
+	sndExpl.play();
 }
 
 function spriteAdd(x, y, size, uvId) {
@@ -97,6 +105,13 @@ function spriteAddText(x, y, size, text) {
 }
 
 function spriteFlush() {
+
+	if (spriteExplTime > 0.0) {
+		spriteExplTime -= 0.03;
+		var size = (0.5 - Math.abs(spriteExplTime - 0.5))*80.0;
+		spriteAdd(spriteExplX, spriteExplY, size, SP_EXPL);
+	}
+
 	if (spriteCount <= 0) return;
 
 	gl.bindBuffer(gl.ARRAY_BUFFER, spriteVbo);

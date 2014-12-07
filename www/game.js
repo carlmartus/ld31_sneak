@@ -101,6 +101,7 @@ var sndWhat;
 var sndAttack0;
 var sndAttack1;
 var sndPou;
+var sndExpl;
 
 var frameFunc;
 var blockMouse;
@@ -143,16 +144,17 @@ function loaded() {
 	avatarInit();
 	deathInit();
 
+	//spriteExplosion(100, 100);
+
 	var canvas = document.getElementById('can');
 	canvas.addEventListener('mousedown', mouseEvent, false);
 
 	esNextFrame(frameExec);
 
-	/*
 	deathQueue(texCsRedWin, 'sneak', 2, null);
 	deathQueue(texCsKnife, 'and', 2, null);
 	deathQueue(texCsRedKill, 'assasinate', 4, null);
-	modeDeath();*/
+	modeDeath();
 
 	modePlay();
 }
@@ -184,6 +186,7 @@ function main() {
 	sndAttack0 = lod.loadAudio('attack0.ogg');
 	sndAttack1 = lod.loadAudio('attack1.ogg');
 	sndPou = lod.loadAudio('pou.ogg');
+	sndExpl = lod.loadAudio('expl.ogg');
 
 	lod.download(loaded);
 }
@@ -696,6 +699,9 @@ var spriteList;
 var spriteCount;
 var spriteVbo;
 var spriteProgram;
+var spriteExplTime;
+var spriteExplX;
+var spriteExplY;
 
 var SPRITE_MAX = 100;
 var SPRITE_COMPS = 5;
@@ -708,6 +714,7 @@ var SP_CROSS = [1, 0];
 var SP_BOX_FREE = [1, 0];
 var SP_BOX_TAKEN = [2, 0];
 var SP_MINED = [12, 0];
+var SP_EXPL = [13, 0];
 var SP_PLAYER_IDLE = [8, 1];
 var SP_PLAYER_SNEAK = [9, 1];
 var SP_TABLET = [3, 0];
@@ -755,6 +762,10 @@ function spriteInit() {
 }
 
 function spriteExplosion(x, y) {
+	spriteExplTime = 1.0;
+	spriteExplX = x;
+	spriteExplY = y;
+	sndExpl.play();
 }
 
 function spriteAdd(x, y, size, uvId) {
@@ -791,6 +802,13 @@ function spriteAddText(x, y, size, text) {
 }
 
 function spriteFlush() {
+
+	if (spriteExplTime > 0.0) {
+		spriteExplTime -= 0.03;
+		var size = (0.5 - Math.abs(spriteExplTime - 0.5))*80.0;
+		spriteAdd(spriteExplX, spriteExplY, size, SP_EXPL);
+	}
+
 	if (spriteCount <= 0) return;
 
 	gl.bindBuffer(gl.ARRAY_BUFFER, spriteVbo);
@@ -903,7 +921,7 @@ function nodeInit() {
 	mine0.linkTeleport(nord1);
 
 	nodeAiStart0 = nord1;
-	nodePlayerStart = mine1;
+	nodePlayerStart = skurk1;
 }
 
 function nodeRender() {
