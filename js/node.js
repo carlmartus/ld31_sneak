@@ -73,6 +73,12 @@ function packNode(x, y, action) {
 	return node;
 }
 
+function nodeUnOccupy() {
+	for (var i=0; i<nodeList.length; i++) {
+		nodeList[i].occupied = false;
+	}
+}
+
 function NodeWalker(start, speed) {
 	this.speed = speed;
 	this.x = start.x;

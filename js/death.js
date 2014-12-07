@@ -35,6 +35,7 @@ function deathInit() {
 function deathReborn() {
 	avatarInit(nodePlayerStart);
 	aiRespawnWave();
+	nodeUnOccupy();
 }
 
 function deathQueue(texture, text, duration, sound) {

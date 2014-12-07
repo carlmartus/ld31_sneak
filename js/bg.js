@@ -44,6 +44,6 @@ function bgRenderPre() {
 
 function bgRenderPost() {
 	spriteAdd(95, 63, 32, SP_BRUSH0);
-	spriteAdd(130, 69, 32, SP_BRUSH0);
+	spriteAdd(118, 68, 32, SP_BRUSH0);
 }
 

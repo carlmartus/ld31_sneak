@@ -18,15 +18,17 @@ var AV_WALKING = 2;
 
 var WE_NONE = 0;
 var WE_KNIFE = 1;
+var WE_PIPE = 2;
 
 var WE_TEXT = [
 	'no weapon',
-	'knife'];
+	'knife',
+	'pipe'];
 
 function avatarInit(start) {
 	avatarWalker = new NodeWalker(nodePlayerStart, 35);
 	avatarLastWalkerState = -1;
-	avatarWeapon = WE_NONE;
+	avatarWeapon = WE_PIPE;
 }
 
 function avatarFrame(ft) {
@@ -96,6 +98,7 @@ function avatarMouse() {
 				case ACTION_HIDE_ATTACK :
 					var target = avatarWalker.from.rebase;
 					var suc = aiAttack(target.x, target.y, avatarWeapon);
+					if (!suc) return;
 					avatarWalker.goAction(avatarAction, suc);
 					break;
 

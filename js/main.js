@@ -3,13 +3,17 @@ var gl;
 var imgBg;
 var imgSprites;
 var imgCsKnife;
+var imgCsPipe;
 var imgCsRedWin;
+var imgCsRedFail;
 var imgCsRedKill;
 
 var texBg;
 var texSprites;
 var texCsKnife;
+var texCsPipe;
 var texCsRedWin;
+var texCsRedFail;
 var texCsRedKill;
 
 var frameFunc;
@@ -37,7 +41,9 @@ function loaded() {
 	texBg = makeTexture(imgBg);
 	texSprites = makeTexture(imgSprites);
 	texCsKnife = makeTexture(imgCsKnife);
+	texCsPipe = makeTexture(imgCsPipe);
 	texCsRedWin = makeTexture(imgCsRedWin);
+	texCsRedFail = makeTexture(imgCsRedFail);
 	texCsRedKill = makeTexture(imgCsRedKill);
 
 	bgInit();
@@ -73,7 +79,9 @@ function main() {
 	imgBg = lod.loadImage('bg.png');
 	imgSprites = lod.loadImage('sprites.png');
 	imgCsKnife = lod.loadImage('cs_knife.png');
+	imgCsPipe = lod.loadImage('cs_pipe.png');
 	imgCsRedWin = lod.loadImage('cs_redwin.png');
+	imgCsRedFail = lod.loadImage('cs_redfail.png');
 	imgCsRedKill = lod.loadImage('cs_redkill.png');
 	lod.download(loaded);
 }

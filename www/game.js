@@ -44,7 +44,7 @@ function bgRenderPre() {
 
 function bgRenderPost() {
 	spriteAdd(95, 63, 32, SP_BRUSH0);
-	spriteAdd(130, 69, 32, SP_BRUSH0);
+	spriteAdd(118, 68, 32, SP_BRUSH0);
 }
 
 var gl;
@@ -52,13 +52,17 @@ var gl;
 var imgBg;
 var imgSprites;
 var imgCsKnife;
+var imgCsPipe;
 var imgCsRedWin;
+var imgCsRedFail;
 var imgCsRedKill;
 
 var texBg;
 var texSprites;
 var texCsKnife;
+var texCsPipe;
 var texCsRedWin;
+var texCsRedFail;
 var texCsRedKill;
 
 var frameFunc;
@@ -86,7 +90,9 @@ function loaded() {
 	texBg = makeTexture(imgBg);
 	texSprites = makeTexture(imgSprites);
 	texCsKnife = makeTexture(imgCsKnife);
+	texCsPipe = makeTexture(imgCsPipe);
 	texCsRedWin = makeTexture(imgCsRedWin);
+	texCsRedFail = makeTexture(imgCsRedFail);
 	texCsRedKill = makeTexture(imgCsRedKill);
 
 	bgInit();
@@ -122,7 +128,9 @@ function main() {
 	imgBg = lod.loadImage('bg.png');
 	imgSprites = lod.loadImage('sprites.png');
 	imgCsKnife = lod.loadImage('cs_knife.png');
+	imgCsPipe = lod.loadImage('cs_pipe.png');
 	imgCsRedWin = lod.loadImage('cs_redwin.png');
+	imgCsRedFail = lod.loadImage('cs_redfail.png');
 	imgCsRedKill = lod.loadImage('cs_redkill.png');
 	lod.download(loaded);
 }
@@ -175,15 +183,17 @@ var AV_WALKING = 2;
 
 var WE_NONE = 0;
 var WE_KNIFE = 1;
+var WE_PIPE = 2;
 
 var WE_TEXT = [
 	'no weapon',
-	'knife'];
+	'knife',
+	'pipe'];
 
 function avatarInit(start) {
 	avatarWalker = new NodeWalker(nodePlayerStart, 35);
 	avatarLastWalkerState = -1;
-	avatarWeapon = WE_NONE;
+	avatarWeapon = WE_PIPE;
 }
 
 function avatarFrame(ft) {
@@ -253,6 +263,7 @@ function avatarMouse() {
 				case ACTION_HIDE_ATTACK :
 					var target = avatarWalker.from.rebase;
 					var suc = aiAttack(target.x, target.y, avatarWeapon);
+					if (!suc) return;
 					avatarWalker.goAction(avatarAction, suc);
 					break;
 
@@ -352,10 +363,12 @@ var AI_RAND = 16;
 var CAUGHT_RAD = 16;
 
 var AIMSG_RED_WIN;
+var AIMSG_RED_FAIL;
 var AIMSG_RED_LOSE;
 
 function aiInit() {
 	AIMSG_RED_WIN = [texCsRedWin, 'you got caught', null];
+	AIMSG_RED_FAIL = [texCsRedFail, 'he he he', null];
 	AIMSG_RED_LOSE = [texCsRedKill, 'take that', null];
 
 	aiWave = 0;
@@ -383,7 +396,8 @@ function aiRespawnWave() {
 function spawnRed() {
 	aiList.push(
 			new Ai(
-				nodeAiStart0, SP_AI_RED, AIMSG_RED_WIN,
+				nodeAiStart0, SP_AI_RED,
+				AIMSG_RED_WIN, AIMSG_RED_FAIL,
 				AIMSG_RED_LOSE, WE_KNIFE));
 }
 
@@ -399,6 +413,10 @@ function aiAttack(x, y, weapon) {
 				case WE_KNIFE :
 					deathQueue(texCsKnife, 'thrust', 1, null);
 					break;
+
+				case WE_PIPE :
+					deathQueue(texCsPipe, 'swing', 1, null);
+					break;
 			}
 
 			if (aiList[i].voln == weapon) {
@@ -411,16 +429,24 @@ function aiAttack(x, y, weapon) {
 
 				modeDeath();
 				return true;
+			} else if (weapon != WE_NONE) {
+				deathQueue(
+						aiList[i].failMsg[0],
+						aiList[i].failMsg[1],
+						2,
+						aiList[i].failMsg[2]);
+				modeDeath();
+				aiList[i].killPlayer();
+				return false;
 			} else {
-				aiList[i].attack = true;
-				aiList[i].speed = aiList[i].orgSpeed*3;
+				aiList[i].killPlayer();
 			}
 		}
 	}
 	return false;
 }
 
-function Ai(startNode, spriteBase, winMsg, killMsg, voln) {
+function Ai(startNode, spriteBase, winMsg, failMsg, killMsg, voln) {
 	this.attack = false;
 	this.voln = voln;
 	this.orgSpeed = 20+Math.random()*15;
@@ -430,6 +456,7 @@ function Ai(startNode, spriteBase, winMsg, killMsg, voln) {
 	this.walker.goRandom();
 	this.spriteBase = spriteBase;
 	this.winMsg = winMsg;
+	this.failMsg = failMsg;
 	this.killMsg = killMsg;
 }
 
@@ -452,11 +479,15 @@ Ai.prototype.frame = function(ft) {
 			24.0, ani);
 
 	if (this.attack && this.caughtPlayer()) {
-		deathQueue(this.winMsg[0], this.winMsg[1],
-				3, this.winMsg[2]);
-		modeDeath();
-		deathReborn();
+		this.killPlayer();
 	}
+}
+
+Ai.prototype.killPlayer = function() {
+	deathQueue(this.winMsg[0], this.winMsg[1],
+			3, this.winMsg[2]);
+	modeDeath();
+	deathReborn();
 }
 
 Ai.prototype.planTravel = function() {
@@ -704,6 +735,12 @@ function packNode(x, y, action) {
 	return node;
 }
 
+function nodeUnOccupy() {
+	for (var i=0; i<nodeList.length; i++) {
+		nodeList[i].occupied = false;
+	}
+}
+
 function NodeWalker(start, speed) {
 	this.speed = speed;
 	this.x = start.x;
@@ -922,6 +959,7 @@ function deathInit() {
 function deathReborn() {
 	avatarInit(nodePlayerStart);
 	aiRespawnWave();
+	nodeUnOccupy();
 }
 
 function deathQueue(texture, text, duration, sound) {

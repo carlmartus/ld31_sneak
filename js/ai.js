@@ -5,10 +5,12 @@ var AI_RAND = 16;
 var CAUGHT_RAD = 16;
 
 var AIMSG_RED_WIN;
+var AIMSG_RED_FAIL;
 var AIMSG_RED_LOSE;
 
 function aiInit() {
 	AIMSG_RED_WIN = [texCsRedWin, 'you got caught', null];
+	AIMSG_RED_FAIL = [texCsRedFail, 'he he he', null];
 	AIMSG_RED_LOSE = [texCsRedKill, 'take that', null];
 
 	aiWave = 0;
@@ -36,7 +38,8 @@ function aiRespawnWave() {
 function spawnRed() {
 	aiList.push(
 			new Ai(
-				nodeAiStart0, SP_AI_RED, AIMSG_RED_WIN,
+				nodeAiStart0, SP_AI_RED,
+				AIMSG_RED_WIN, AIMSG_RED_FAIL,
 				AIMSG_RED_LOSE, WE_KNIFE));
 }
 
@@ -52,6 +55,10 @@ function aiAttack(x, y, weapon) {
 				case WE_KNIFE :
 					deathQueue(texCsKnife, 'thrust', 1, null);
 					break;
+
+				case WE_PIPE :
+					deathQueue(texCsPipe, 'swing', 1, null);
+					break;
 			}
 
 			if (aiList[i].voln == weapon) {
@@ -64,16 +71,24 @@ function aiAttack(x, y, weapon) {
 
 				modeDeath();
 				return true;
+			} else if (weapon != WE_NONE) {
+				deathQueue(
+						aiList[i].failMsg[0],
+						aiList[i].failMsg[1],
+						2,
+						aiList[i].failMsg[2]);
+				modeDeath();
+				aiList[i].killPlayer();
+				return false;
 			} else {
-				aiList[i].attack = true;
-				aiList[i].speed = aiList[i].orgSpeed*3;
+				aiList[i].killPlayer();
 			}
 		}
 	}
 	return false;
 }
 
-function Ai(startNode, spriteBase, winMsg, killMsg, voln) {
+function Ai(startNode, spriteBase, winMsg, failMsg, killMsg, voln) {
 	this.attack = false;
 	this.voln = voln;
 	this.orgSpeed = 20+Math.random()*15;
@@ -83,6 +98,7 @@ function Ai(startNode, spriteBase, winMsg, killMsg, voln) {
 	this.walker.goRandom();
 	this.spriteBase = spriteBase;
 	this.winMsg = winMsg;
+	this.failMsg = failMsg;
 	this.killMsg = killMsg;
 }
 
@@ -105,11 +121,15 @@ Ai.prototype.frame = function(ft) {
 			24.0, ani);
 
 	if (this.attack && this.caughtPlayer()) {
-		deathQueue(this.winMsg[0], this.winMsg[1],
-				3, this.winMsg[2]);
-		modeDeath();
-		deathReborn();
+		this.killPlayer();
 	}
+}
+
+Ai.prototype.killPlayer = function() {
+	deathQueue(this.winMsg[0], this.winMsg[1],
+			3, this.winMsg[2]);
+	modeDeath();
+	deathReborn();
 }
 
 Ai.prototype.planTravel = function() {
