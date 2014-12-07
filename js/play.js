@@ -1,5 +1,5 @@
 function playFrame(ft) {
-	bgRenderPre();
+	bgRenderPre(ft);
 
 	nodeRender();
 

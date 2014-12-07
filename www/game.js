@@ -2,9 +2,14 @@ var bgVbo;
 var bgProgram;
 var bgMvp;
 
+var bgTimer;
+var bgUniTimer;
+
 var BG_SIZE = 512.0;
 
 function bgInit() {
+	bgTimer = 0.0;
+
 	var vertData = new Float32Array([
 		0.0, 0.0, 0.0, 0.0,
 		BG_SIZE, 0.0, 1.0, 0.0,
@@ -25,6 +30,7 @@ function bgInit() {
 
 	var uniMvp = bgProgram.getUniform('mvp');
 	var uniTex = bgProgram.getUniform('tex');
+	bgUniTimer = bgProgram.getUniform('timer');
 
 	bgMvp = esMat4_create();
 	esMat4_ortho(bgMvp, 0.0, 512.0, 512.0, 0.0);
@@ -32,8 +38,15 @@ function bgInit() {
 	gl.uniform1i(uniTex, 0);
 }
 
-function bgRenderPre() {
+function bgRenderPre(ft) {
+
+	bgTimer += ft*0.2;
+	if (bgTimer > 1.6) {
+		bgTimer = 0.0;
+	}
+
 	bgProgram.use();
+	gl.uniform1f(bgUniTimer, bgTimer);
 	gl.bindTexture(gl.TEXTURE_2D, texBg);
 	gl.enableVertexAttribArray(0);
 	gl.bindBuffer(gl.ARRAY_BUFFER, bgVbo);
@@ -45,6 +58,7 @@ function bgRenderPre() {
 function bgRenderPost() {
 	spriteAdd(95, 63, 32, SP_BRUSH0);
 	spriteAdd(118, 68, 32, SP_BRUSH0);
+	spriteAdd(117, 176, 32, SP_BRUSH0);
 }
 
 var gl;
@@ -247,6 +261,10 @@ function avatarSetMouse(x, y) {
 	avatarMouse();
 }
 
+function avatarUnSetMouse() {
+	avatarQueueMouse = null;
+}
+
 function avatarMouse() {
 	if (avatarState == AV_WAITING) {
 		var x = avatarQueueMouse[0];
@@ -263,7 +281,7 @@ function avatarMouse() {
 				case ACTION_HIDE_ATTACK :
 					var target = avatarWalker.from.rebase;
 					var suc = aiAttack(target.x, target.y, avatarWeapon);
-					if (!suc) return;
+					if (avatarWalker.last == null) return;
 					avatarWalker.goAction(avatarAction, suc);
 					break;
 
@@ -994,7 +1012,7 @@ function deathFrame(ft) {
 }
 
 function playFrame(ft) {
-	bgRenderPre();
+	bgRenderPre(ft);
 
 	nodeRender();
 

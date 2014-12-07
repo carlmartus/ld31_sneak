@@ -82,6 +82,10 @@ function avatarSetMouse(x, y) {
 	avatarMouse();
 }
 
+function avatarUnSetMouse() {
+	avatarQueueMouse = null;
+}
+
 function avatarMouse() {
 	if (avatarState == AV_WAITING) {
 		var x = avatarQueueMouse[0];
@@ -98,7 +102,7 @@ function avatarMouse() {
 				case ACTION_HIDE_ATTACK :
 					var target = avatarWalker.from.rebase;
 					var suc = aiAttack(target.x, target.y, avatarWeapon);
-					if (!suc) return;
+					if (avatarWalker.last == null) return;
 					avatarWalker.goAction(avatarAction, suc);
 					break;
 
