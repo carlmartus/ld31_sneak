@@ -84,8 +84,8 @@ function mouseEvent(event) {
 	var canvas = document.getElementById('can');
 	var rect = canvas.getBoundingClientRect();
 
-	var x = event.clientX - rect.x;
-	var y = event.clientY - rect.y;
+	var x = event.clientX - (rect.x | rect.left);
+	var y = event.clientY - (rect.y | rect.top);
 	console.log(event, rect, x, y);
 	avatarSetMouse(x, y);
 }
