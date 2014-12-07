@@ -84,8 +84,6 @@ function loaded() {
 	deathQueue(texCsKnife, 'and', 2, null);
 	deathQueue(texCsRedKill, 'assasinate', 4, null);
 	modeDeath();
-
-	modePlay();
 }
 
 function main() {
